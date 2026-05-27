@@ -1,0 +1,187 @@
+{
+  "_INSTRUCCIONES": {
+    "uso": "Este archivo es la plantilla oficial para crear personajes en UNIVERSUS: Battle Collision.",
+    "pasos": [
+      "1. Copia este archivo y renómbralo con el nombre del personaje.",
+      "2. Rellena todos los campos requeridos (*). Los opcionales pueden omitirse.",
+      "3. Entrega el archivo a Claude y él lo integrará automáticamente al juego.",
+      "4. No necesitas escribir ningún código — solo definir el personaje aquí."
+    ],
+    "efectos_disponibles": {
+      "daño": ["damage:N", "damage_aoe:N", "damage_multi:N:TARGETS"],
+      "curacion": ["heal:N", "heal_ally:N", "heal_team:N"],
+      "escudo": ["shield:N"],
+      "cargas": ["generate_charges:N", "steal_charges:N", "drain_charges_aoe:N"],
+      "buffs": ["buff:NOMBRE:TURNOS", "stealth:TURNOS", "frenzy:TURNOS", "regen:PORCENTAJE:TURNOS", "armor:TURNOS", "counterattack:TURNOS", "aoe_immunity:TURNOS", "concentration:TURNOS"],
+      "debuffs": ["stun:TURNOS", "mega_stun:TURNOS", "burn:HP:TURNOS", "burn_pct:PORCENTAJE:TURNOS", "solar_burn:PORCENTAJE:TURNOS", "poison:HP:TURNOS", "freeze:TURNOS", "mega_freeze:TURNOS", "fear:TURNOS", "possession:TURNOS", "confusion:TURNOS", "bleed:HP:TURNOS", "weaken:TURNOS", "silence:TIPO:TURNOS"],
+      "especiales": ["transform:ESTADO", "summon:NOMBRE_INVOCACION", "dispel_buffs", "dispel_debuffs", "cleanse_self", "cleanse_ally", "cleanse_team", "copy_hp_damage", "extra_turn", "speed_up:N:TURNOS"],
+      "criticos": ["crit:PROBABILIDAD (0.0-1.0)", "crit_damage:MULTIPLICADOR"],
+      "condiciones": ["if_target_has:EFECTO", "if_self_hp_below:PORCENTAJE", "if_self_has:EFECTO", "double_if_debuff"]
+    },
+    "triggers_pasiva": {
+      "on_turn_start": "Al inicio del turno del personaje",
+      "on_round_start": "Al inicio de cada ronda",
+      "on_hit_received": "Al recibir cualquier daño",
+      "on_kill": "Al eliminar a un enemigo",
+      "on_ally_death": "Cuando un aliado muere",
+      "on_enemy_death": "Cuando un enemigo muere",
+      "on_buff_applied": "Cuando un buff es aplicado al equipo aliado",
+      "on_debuff_received": "Cuando el personaje recibe un debuff",
+      "on_special_used": "Cuando el personaje usa una habilidad especial",
+      "on_summon_die": "Cuando una invocación propia es eliminada",
+      "on_heal": "Cuando el personaje recupera HP",
+      "on_crit": "Al anotar un golpe crítico",
+      "permanent": "Efecto pasivo siempre activo"
+    },
+    "tipos_objetivo": {
+      "single": "Un enemigo específico (el jugador elige)",
+      "aoe": "Todos los enemigos",
+      "self": "El propio personaje",
+      "ally_single": "Un aliado específico (el jugador elige)",
+      "ally_aoe": "Todos los aliados",
+      "random_enemy": "Un enemigo aleatorio",
+      "random_ally": "Un aliado aleatorio"
+    },
+    "tipos_habilidad": {
+      "basic": "Ataque básico — siempre disponible, genera cargas",
+      "special": "Habilidad especial — cuesta cargas",
+      "over": "Habilidad Over — la más poderosa, cuesta muchas cargas"
+    }
+  },
+
+  "_EJEMPLO_PERSONAJE": {
+    "name": "Goku",
+    "hp": 22,
+    "maxHp": 22,
+    "speed": 95,
+    "portrait": "https://URL_DE_IMAGEN.jpg",
+    "transformPortrait": "https://URL_IMAGEN_TRANSFORMADO.jpg",
+
+    "passive": {
+      "name": "Espíritu del Héroe",
+      "description": "Inmune a Quemadura. Cada ataque básico acumula +2 de daño para el siguiente. Al alcanzar 50% HP o menos, todas sus habilidades cuestan 3 cargas menos.",
+      "trigger": "permanent",
+      "effects": [
+        { "type": "immunity", "value": "burn" },
+        { "type": "basic_charge_bonus", "value": 2 },
+        { "type": "cost_reduction_at_hp", "threshold": 50, "reduction": 3 }
+      ]
+    },
+
+    "abilities": [
+      {
+        "name": "Kamehameha",
+        "type": "basic",
+        "cost": 0,
+        "chargeGain": 2,
+        "target": "single",
+        "description": "Causa 3 de daño. 40% de probabilidad de crítico (daño doble).",
+        "effects": [
+          { "type": "damage", "value": 3 },
+          { "type": "crit", "value": 0.4 }
+        ]
+      },
+      {
+        "name": "Kaio-Ken",
+        "type": "special",
+        "cost": 4,
+        "chargeGain": 0,
+        "target": "self",
+        "description": "Gana Buff Furia por 2 turnos y Regeneración 15% por 2 turnos.",
+        "effects": [
+          { "type": "buff", "value": "Furia", "duration": 2 },
+          { "type": "regen", "value": 15, "duration": 2 }
+        ]
+      },
+      {
+        "name": "Instinto Superior",
+        "type": "special",
+        "cost": 8,
+        "chargeGain": 0,
+        "target": "self",
+        "description": "Transforma a Goku. Sus ataques hacen daño doble por 3 turnos. Obtiene Esquiva Área.",
+        "effects": [
+          { "type": "transform", "value": "instinct_mode" },
+          { "type": "aoe_immunity", "duration": 3 },
+          { "type": "damage_multiplier", "value": 2.0, "duration": 3 }
+        ]
+      },
+      {
+        "name": "Genkidama",
+        "type": "over",
+        "cost": 12,
+        "chargeGain": 0,
+        "target": "aoe",
+        "description": "Causa 8 de daño AOE. Roba 3 cargas de cada enemigo. Si el enemigo tiene Quemadura, hace daño doble.",
+        "effects": [
+          { "type": "damage_aoe", "value": 8 },
+          { "type": "steal_charges", "value": 3 },
+          { "type": "conditional_double", "condition": "target_has_burn" }
+        ]
+      }
+    ]
+  },
+
+  "_TEMPLATE_VACIO": {
+    "name": "NOMBRE_DEL_PERSONAJE",
+    "hp": 20,
+    "maxHp": 20,
+    "speed": 85,
+    "portrait": "https://URL_IMAGEN_PRINCIPAL.jpg",
+    "transformPortrait": null,
+
+    "passive": {
+      "name": "NOMBRE_DE_PASIVA",
+      "description": "Descripción completa de la pasiva para mostrar al jugador.",
+      "trigger": "permanent",
+      "effects": []
+    },
+
+    "abilities": [
+      {
+        "name": "ATAQUE BÁSICO",
+        "type": "basic",
+        "cost": 0,
+        "chargeGain": 2,
+        "target": "single",
+        "description": "Descripción del ataque básico.",
+        "effects": [
+          { "type": "damage", "value": 2 }
+        ]
+      },
+      {
+        "name": "HABILIDAD ESPECIAL 1",
+        "type": "special",
+        "cost": 4,
+        "chargeGain": 0,
+        "target": "single",
+        "description": "Descripción de la habilidad especial.",
+        "effects": [
+          { "type": "damage", "value": 4 }
+        ]
+      },
+      {
+        "name": "HABILIDAD ESPECIAL 2",
+        "type": "special",
+        "cost": 8,
+        "chargeGain": 0,
+        "target": "self",
+        "description": "Descripción de la segunda habilidad especial.",
+        "effects": [
+          { "type": "buff", "value": "Furia", "duration": 2 }
+        ]
+      },
+      {
+        "name": "HABILIDAD OVER",
+        "type": "over",
+        "cost": 12,
+        "chargeGain": 0,
+        "target": "aoe",
+        "description": "Descripción de la habilidad Over.",
+        "effects": [
+          { "type": "damage_aoe", "value": 6 }
+        ]
+      }
+    ]
+  }
+}

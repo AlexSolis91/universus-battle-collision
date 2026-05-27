@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UNIVERSUS — Battle Collision</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Design System -->
+  <link rel="stylesheet" href="css/universus.css">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     AUDIO SYSTEM
+════════════════════════════════════════════ -->
+<audio id="audioMenu" loop preload="auto">
+  <source src="audio/Statue%20of%20God%20Theme%20_%20Solo%20Leveling%20Episode%201%20_%20%E4%BF%BA%E3%81%A0%E3%81%91%E3%83%AC%E3%83%99%E3%83%AB%E3%82%A2%E3%83%83%E3%83%97%E3%81%AA%E4%BB%B6%20OST%20Cover.mp3" type="audio/mpeg">
+</audio>
+<audio id="audioBattle1"  loop preload="auto"><source src="audio/Naruto-%20Kouen%20%5BCrimson%20Flames%5D%20Extended.mp3" type="audio/mpeg"></audio>
+<audio id="audioBattle2"  loop preload="auto"><source src="audio/Infinity%20Castle%20Theme%20_%20Demon%20Slayer%20S4%20EP8%20Ost%20ORIGINAL%20SOUNDTRACK.mp3" type="audio/mpeg"></audio>
+<audio id="audioBattle3"  loop preload="auto"><source src="audio/Demon%20Slayer%20Season%202%20Main%20Theme%20Tengen%20Uzui%20Theme%20_%20EPIC%20VERSION.mp3" type="audio/mpeg"></audio>
+<audio id="audioBattle4"  loop preload="auto"><source src="audio/Desperate%20Assault%20HQ%20Remaster%20and%20Rearrange.mp3" type="audio/mpeg"></audio>
+<audio id="audioBattle5"  loop preload="auto"><source src="audio/%5BUNDECEMBER%5D%20SOUNDTRACK%20_%20Into%20the%20Chaos.mp3" type="audio/mpeg"></audio>
+<audio id="audioBattle6"  loop preload="auto"><source src="https://AlejandroSolis.publit.io/file/Super-Buu-Theme-FULL.mp3" type="audio/mpeg"></audio>
+<audio id="audioBattle7"  loop preload="auto"><source src="https://AlejandroSolis.publit.io/file/Sasukes-Theme-Kokuten-Naruto-Shippuden-Cover-Epic-Version.mp3" type="audio/mpeg"></audio>
+<audio id="audioBattle8"  loop preload="auto"><source src="https://AlejandroSolis.publit.io/file/Solid-State-Scouter-Dragon-Ball-Z-Original-Soundtrack.mp3" type="audio/mpeg"></audio>
+<audio id="audioBattle9"  loop preload="auto"><source src="https://AlejandroSolis.publit.io/file/Naruto-Shippuden-OST-1-Track-26-Keisei-Gyakuten-Reverse-Situation.mp3" type="audio/mpeg"></audio>
+<audio id="audioBattle10" loop preload="auto"><source src="https://AlejandroSolis.publit.io/file/Dragon-Ball-GT-Final-Bout-Hikari-No-Willpower-Remake-Hironobu-Kageyama-By-Gladius.mp3" type="audio/mpeg"></audio>
+<audio id="audioBattle11" loop preload="auto"><source src="https://AlejandroSolis.publit.io/file/Demon-Slayer-Inosuke-Theme-V2-EPIC-VERSION-Tanjiro-Inosuke-vs-Enmu.mp3" type="audio/mpeg"></audio>
+<audio id="audioOverSfx" preload="auto"><source src="https://alejandrosolis.publit.io/file/Final-Smash-Attack-Cinematic-Death-Background-SFX-4K-Super-Smash-Bros.Ultimate.mp3" type="audio/mpeg"></audio>
+<audio id="audioTransformSfx" preload="auto"><source src="https://alejandrosolis.publit.io/file/Dragon-Ball-Super-SSJ-God-Transformation-Burst-Sound-Effect-Free-Ringtone-Download.mp3" type="audio/mpeg"></audio>
+<audio id="audioSelect" preload="auto"><source src="audio/Menu%20Select%20Sound%20-%20Super.mp3" type="audio/mpeg"></audio>
+
+
+<!-- ════════════════════════════════════════════
+     LOGIN SCREEN
+════════════════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-bg"></div>
+  <div class="login-glow"></div>
+
+  <div class="game-logo">
+    <div class="game-logo-title">UNIVERSUS</div>
+    <div class="game-logo-sub">Battle Collision</div>
+    <div class="game-logo-version">v5.0 — TACTICAL RPG 5v5</div>
+  </div>
+
+  <div class="login-box">
+    <div class="login-box-title">Acceso al Sistema</div>
+
+    <button id="googleLoginBtn" class="btn-google" onclick="signInWithGoogle()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="22" height="22" alt="Google">
+      Iniciar sesión con Google
+    </button>
+
+    <div id="loginStatus" style="font-size:.78rem; color:var(--text-muted); text-align:center; min-height:18px;"></div>
+  </div>
+
+  <div style="font-size:.68rem; color:var(--text-muted); letter-spacing:.08em;">
+    Al iniciar sesión aceptas jugar con honor ⚔️
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     MODE SELECT SCREEN
+════════════════════════════════════════════ -->
+<div id="modeSelectScreen" style="display:none; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; gap:2.5rem; position:relative; z-index:1;">
+  <div class="login-bg"></div>
+
+  <div class="game-logo">
+    <div class="game-logo-title">UNIVERSUS</div>
+    <div class="game-logo-sub">Battle Collision</div>
+  </div>
+
+  <div style="font-family:'Chakra Petch',sans-serif; font-size:.88rem; color:var(--text-secondary); letter-spacing:.2em; text-transform:uppercase;">
+    Selecciona Modo de Juego
+  </div>
+
+  <button id="backToLobbyBtn" onclick="showLobby()" style="display:none; position:absolute; top:20px; left:20px;" class="btn btn-ghost btn-sm">← Volver al Lobby</button>
+
+  <div style="display:flex; gap:1.5rem; flex-wrap:wrap; justify-content:center;">
+    <button onclick="csSelectMode('multi')" class="btn btn-primary btn-lg" style="min-width:180px; flex-direction:column; gap:4px; height:auto; padding:1.4rem 2rem;">
+      <span style="font-size:1.5rem;">👥</span>
+      <span>MULTIJUGADOR</span>
+      <span style="font-size:.72rem; font-weight:400; opacity:.7; text-transform:none; letter-spacing:0;">Jugador vs Jugador</span>
+    </button>
+
+    <button onclick="csSelectMode('solo')" class="btn btn-danger btn-lg" style="min-width:180px; flex-direction:column; gap:4px; height:auto; padding:1.4rem 2rem;">
+      <span style="font-size:1.5rem;">🤖</span>
+      <span>SOLITARIO</span>
+      <span style="font-size:.72rem; font-weight:400; opacity:.7; text-transform:none; letter-spacing:0;">Jugador vs IA</span>
+    </button>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     LOBBY SCREEN
+════════════════════════════════════════════ -->
+<div id="lobbyScreen" style="display:none;">
+  <!-- Header -->
+  <div class="lobby-header">
+    <div class="lobby-logo">⚔️ UNIVERSUS</div>
+
+    <div class="flex items-center gap-md">
+      <!-- HUD Recursos -->
+      <div class="lobby-hud">
+        <div class="hud-resource hud-gold" title="Oro">
+          <img src="https://i.ibb.co/Q7t26McR/Captura-de-pantalla-2026-05-07-155804.png" alt="Oro" width="20" height="20">
+          <span class="value" id="hud-gold">0</span>
+        </div>
+        <div class="hud-resource hud-runes" title="Runas de Ataque">
+          <img src="https://i.ibb.co/8D3s84Nw/image-53bcf67.png" alt="Runas" width="20" height="20">
+          <span class="value" id="hud-runes">0</span>
+        </div>
+        <div class="hud-resource hud-keys" title="Llaves Arcanas">
+          <span class="icon">🗝️</span>
+          <span class="value" id="hud-keys">0</span>
+        </div>
+      </div>
+
+      <!-- User Info -->
+      <div class="lobby-user-info" id="lobbyUserInfo">
+        <img id="lobbyUserPhoto" src="" class="lobby-user-photo" onerror="this.style.display='none'" alt="">
+        <span id="lobbyUserName" class="lobby-user-name"></span>
+        <button onclick="signOut()" class="btn btn-danger btn-sm">Salir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grid Principal -->
+  <div class="lobby-grid">
+
+    <!-- Panel Izquierdo: Modos de Juego -->
+    <div style="display:flex; flex-direction:column; gap:1rem;">
+      <div class="card card-glow-blue">
+        <div class="section-label">Modo de Juego</div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button onclick="createOnlineRoom()" class="btn btn-primary btn-full">
+            🌐 Crear Sala Online
+          </button>
+          <button onclick="goToLocalMode('multi')" class="btn btn-ghost btn-full">
+            👥 Local — 2 Jugadores
+          </button>
+          <button onclick="goToLocalMode('solo')" class="btn btn-ghost btn-full">
+            🤖 Solitario — vs IA
+          </button>
+          <button onclick="showRaidLobby()" class="btn btn-gold btn-full" style="margin-top:4px;">
+            🏆 Ranked — Raid Diario
+          </button>
+          <button onclick="showRankedTeamScreen()" class="btn btn-full" style="background:rgba(79,195,247,0.08);border:1px solid rgba(79,195,247,0.3);color:#4fc3f7;">
+            ⚔️ Equipo Ranked
+          </button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <button onclick="window.showInventoryScreen && window.showInventoryScreen()" class="btn btn-violet btn-full btn-sm">
+            🎒 Inventario
+          </button>
+          <button onclick="window.showMarketScreen && window.showMarketScreen()" class="btn btn-gold btn-full btn-sm">
+            🏪 Mercado
+          </button>
+          <button onclick="window.showBossScreen && window.showBossScreen()" class="btn btn-danger btn-full btn-sm">
+            ⚔️ Jefe de Sala
+          </button>
+          <button onclick="showLeaderboard()" class="btn btn-ghost btn-full btn-sm">
+            📊 Leaderboard
+          </button>
+        </div>
+
+        <div id="adminBtnsWrap" style="display:none; margin-top:8px; display:flex; flex-direction:column; gap:4px;">
+          <button id="adminBtn" onclick="window.showAdminPanel && window.showAdminPanel()" style="display:none;" class="btn btn-full btn-sm" style="background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);color:#ffd700;">
+            👑 Admin
+          </button>
+          <button id="bossActivationBtn" onclick="window.showBossActivationModal && window.showBossActivationModal()" style="display:none;" class="btn btn-danger btn-full btn-sm">
+            ⚡ Activar Evento Jefe
+          </button>
+        </div>
+      </div>
+
+      <!-- Jugadores Online -->
+      <div class="card" style="flex:1;">
+        <div class="section-label" style="gap:6px;">
+          <div class="online-dot"></div>
+          Jugadores Online
+          <span id="onlineCount" class="badge badge-blue" style="margin-left:auto;">0</span>
+        </div>
+        <div id="playersList" style="display:flex; flex-direction:column; gap:6px; max-height:180px; overflow-y:auto;"></div>
+      </div>
+    </div>
+
+    <!-- Panel Central: Salas -->
+    <div class="card card-glow-blue">
+      <div class="section-label" style="justify-content:space-between;">
+        <span>Salas Disponibles</span>
+        <button onclick="refreshRooms()" class="btn btn-ghost btn-sm btn-icon">🔄</button>
+      </div>
+      <div id="roomsList" style="display:flex; flex-direction:column; gap:8px; min-height:200px;">
+        <div style="text-align:center; color:var(--text-muted); padding:2rem; font-size:.85rem;">
+          Cargando salas...
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel Derecho: Chat Global -->
+    <div class="card card-glow-gold" style="display:flex; flex-direction:column;">
+      <div class="section-label">💬 Chat Global</div>
+      <div id="globalChatMessages" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:5px; min-height:200px; max-height:300px;"></div>
+      <div style="display:flex; gap:6px; margin-top:10px;">
+        <input id="globalChatInput" type="text" placeholder="Mensaje al lobby..." maxlength="120"
+          style="flex:1; background:rgba(245,158,11,0.05); border:1px solid rgba(245,158,11,0.2); border-radius:var(--radius-sm); padding:8px 12px; color:var(--text-primary); font-size:.8rem; outline:none; font-family:'Inter',sans-serif;"
+          onkeydown="if(event.key==='Enter') sendGlobalChat()">
+        <button onclick="sendGlobalChat()" style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); border-radius:var(--radius-sm); color:var(--plasma-gold); padding:8px 14px; cursor:pointer; font-size:.9rem; transition:var(--transition);">
+          ➤
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Challenge Modal -->
+  <div id="challengeModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9000; align-items:center; justify-content:center;">
+    <div class="card card-glow-gold" style="max-width:360px; text-align:center; padding:2rem 2.5rem;">
+      <div style="font-size:2.5rem; margin-bottom:.5rem;">⚔️</div>
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:1.4rem; color:var(--plasma-gold); margin-bottom:.5rem;">¡DESAFÍO!</div>
+      <div id="challengeModalText" class="text-secondary" style="font-size:.88rem; margin-bottom:1.5rem;">alguien te desafía</div>
+      <div style="display:flex; gap:10px; justify-content:center;">
+        <button onclick="respondChallenge(true)" class="btn btn-full" style="background:rgba(16,185,129,0.15); border:1px solid var(--plasma-green); color:var(--plasma-green); font-family:'Chakra Petch',sans-serif;">
+          ✅ Aceptar
+        </button>
+        <button onclick="respondChallenge(false)" class="btn btn-danger btn-full">
+          ❌ Rechazar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     WAITING ROOM SCREEN
+════════════════════════════════════════════ -->
+<div id="waitingScreen" style="display:none;">
+  <div class="login-bg"></div>
+  <div style="font-family:'Chakra Petch',sans-serif; font-size:1rem; color:var(--plasma-blue); letter-spacing:.2em; text-transform:uppercase;">
+    ⏳ Sala de Espera
+  </div>
+  <div id="waitingRoomCode" class="waiting-code"></div>
+  <div class="text-secondary" style="font-size:.88rem;">Comparte este código con tu rival</div>
+  <div id="waitingStatus" style="color:var(--plasma-gold); font-size:.95rem; font-family:'Chakra Petch',sans-serif; animation:loginPulse 2s infinite;">
+    Esperando oponente...
+  </div>
+  <button onclick="cancelRoom()" class="btn btn-danger">Cancelar</button>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     CHARACTER SELECT SCREEN
+════════════════════════════════════════════ -->
+<div id="charSelectScreen" style="display:none;">
+  <div class="login-bg"></div>
+
+  <div class="cs-title">UNIVERSUS</div>
+  <div class="cs-phase-label team1" id="csPhaseLabel">🔷 HUNTERS — Elige tus 5 personajes</div>
+
+  <!-- Ready button (online mode) -->
+  <div id="onlineReadyBtn" style="display:none; position:fixed; bottom:28px; left:50%; transform:translateX(-50%); z-index:9999; flex-direction:column; align-items:center; gap:8px;">
+    <button onclick="submitOnlineReady()" id="onlineReadyBtnInner" class="btn btn-lg" style="background:linear-gradient(135deg,#003a1a,#00aa55); border:2px solid var(--plasma-green); color:var(--plasma-green); box-shadow:0 0 30px rgba(16,185,129,0.3); min-width:260px;">
+      ✅ LISTO PARA JUGAR
+    </button>
+    <div style="font-size:.72rem; color:var(--plasma-green); opacity:.7; letter-spacing:.1em;">Has elegido tus 5 personajes</div>
+  </div>
+
+  <!-- Teams Preview -->
+  <div class="cs-teams-preview">
+    <div class="cs-team-panel team1">
+      <div class="cs-team-label" id="csTeamLabel1">🔷 <span id="csTeamName1">HUNTERS</span></div>
+      <div class="cs-team-slots" id="csTeam1Slots"></div>
+    </div>
+    <div class="cs-team-panel team2">
+      <div class="cs-team-label" id="csTeamLabel2">🔶 <span id="csTeamName2">REAPERS</span></div>
+      <div id="onlineOppStatus" style="font-size:.72rem; color:var(--text-muted); padding:2px 6px;"></div>
+      <div class="cs-team-slots" id="csTeam2Slots"></div>
+    </div>
+  </div>
+
+  <!-- Character Grid -->
+  <div class="cs-grid-wrap">
+    <div class="cs-grid" id="csGrid"></div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div id="csDetailModal">
+  <div class="cs-detail-content" id="csDetailContent"></div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     GAME BATTLE CONTAINER
+════════════════════════════════════════════ -->
+<div class="game-container" style="display:none;">
+  <div class="game-header">
+    <div class="game-title">⚔️ UNIVERSUS</div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button onclick="toggleAudio()" id="audioToggleBtn" class="btn btn-ghost btn-sm btn-icon">🔊</button>
+      <button onclick="toggleChat()" class="btn btn-ghost btn-sm btn-icon">💬</button>
+    </div>
+  </div>
+
+  <div class="battle-arena">
+    <!-- Team 1 -->
+    <div class="team-column">
+      <div style="font-family:'Chakra Petch',sans-serif; font-size:.78rem; font-weight:700; color:var(--team1); letter-spacing:.1em; text-transform:uppercase; margin-bottom:4px; text-shadow:0 0 10px rgba(0,212,255,0.4);" id="teamHeader1">
+        🔷 HUNTERS
+      </div>
+      <div id="team1Characters"></div>
+      <div id="team1Summons"></div>
+    </div>
+
+    <!-- Center Column -->
+    <div class="center-column">
+      <div class="control-panel">
+        <div class="turn-info">
+          <div class="round-counter" id="roundDisplayHeader">RONDA 1</div>
+          <div class="current-turn" id="currentTurnDisplay">Calculando...</div>
+        </div>
+      </div>
+
+      <div class="battle-log">
+        <div class="battle-log-title">
+          <span>📜 Battle Log</span>
+          <button onclick="showBuffDebuffGuide()" class="btn btn-ghost btn-sm btn-icon" style="font-size:.6rem;" title="Guía de efectos">
+            📖 Guía
+          </button>
+        </div>
+        <div id="battleLogContent"></div>
+      </div>
+    </div>
+
+    <!-- Team 2 -->
+    <div class="team-column">
+      <div style="font-family:'Chakra Petch',sans-serif; font-size:.78rem; font-weight:700; color:var(--team2); letter-spacing:.1em; text-transform:uppercase; margin-bottom:4px; text-shadow:0 0 10px rgba(255,102,68,0.4);" id="teamHeader2">
+        🔶 REAPERS
+      </div>
+      <div id="team2Characters"></div>
+      <div id="team2Summons"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     MODALS
+════════════════════════════════════════════ -->
+
+<!-- Turn Confirm -->
+<div class="turn-confirm-modal" id="turnConfirmModal">
+  <div class="turn-confirm-content">
+    <div class="round-counter" id="turnConfirmRound">RONDA 1</div>
+    <div class="turn-confirm-title">Siguiente Turno</div>
+    <div class="turn-confirm-subtitle" id="turnConfirmChar">Personaje</div>
+    <div style="margin-top:1.2rem;">
+      <button class="turn-confirm-btn" onclick="continueTurn()">▶️ Continuar Turno</button>
+    </div>
+  </div>
+</div>
+
+<!-- Battle Status -->
+<div class="battle-status-modal" id="battleStatusModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:999; align-items:center; justify-content:center; padding:1rem;">
+  <div class="card card-glow-blue" style="max-width:600px; width:100%; max-height:85vh; overflow-y:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+      <div class="section-label" style="margin:0;">📊 Estado de la Batalla</div>
+      <span class="badge badge-blue" id="battleStatusRound">Ronda 1</span>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+      <div>
+        <div class="section-label" id="statusHeader1">🔷 HUNTERS</div>
+        <div id="statusTeam1"></div>
+      </div>
+      <div>
+        <div class="section-label" id="statusHeader2">🔶 REAPERS</div>
+        <div id="statusTeam2"></div>
+      </div>
+    </div>
+    <div style="margin-top:1.2rem; text-align:center;">
+      <button onclick="closeBattleStatus()" class="btn btn-ghost">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Target Selection -->
+<div class="target-selection-modal" id="targetModal">
+  <div class="target-selection-content">
+    <div class="target-selection-title" id="targetModalTitle">Selecciona un Objetivo</div>
+    <div class="target-grid" id="targetGrid"></div>
+  </div>
+</div>
+
+<!-- Action Modal -->
+<div class="action-modal" id="actionModal">
+  <div class="action-modal-content">
+    <div class="action-modal-header">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div class="round-counter" id="roundCounter">RONDA 1</div>
+        <button id="btnVolverBatalla" onclick="closeActionModal()" class="btn btn-ghost btn-sm">
+          ← Batalla
+        </button>
+      </div>
+      <div class="action-modal-hero">
+        <div class="action-modal-portrait-wrap">
+          <img id="actionPortraitImg" class="action-modal-portrait" src="" alt="" onerror="this.style.display='none'; document.getElementById('actionPortraitFallback').style.display='flex'">
+          <div id="actionPortraitFallback" class="action-modal-portrait-fallback" style="display:none;">⚔️</div>
+        </div>
+        <div class="action-modal-info">
+          <div class="action-modal-title" id="actionModalTitle">Turno de Personaje</div>
+          <div class="action-modal-stats">
+            <div class="action-stat">❤️ <span id="actionHP">20/20</span></div>
+            <div class="action-stat">⚡ <span id="actionCharges">0</span> cargas</div>
+            <div class="action-stat" id="actionShield" style="display:none;">🛡️ <span id="actionShieldValue">0</span></div>
+          </div>
+          <div id="actionPassive" style="margin-top:5px;"></div>
+          <div id="actionStatusEffects" style="margin-top:5px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="action-abilities" id="actionAbilities"></div>
+  </div>
+</div>
+
+<!-- Char Info Panel -->
+<div id="charInfoPanel" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:995; justify-content:center; align-items:center; padding:1rem;">
+  <div id="charInfoContent" class="card card-glow-blue" style="max-width:420px; width:100%; max-height:85vh; overflow-y:auto;"></div>
+</div>
+
+<!-- Game Over -->
+<div class="game-over-modal" id="gameOverModal">
+  <div class="game-over-content">
+    <div class="game-over-title" id="gameOverText">¡VICTORIA!</div>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:1rem;">
+      <button class="restart-btn" onclick="goToMainMenu()" style="background:linear-gradient(135deg,#0077a8,#00d4ff);">
+        🏠 Menú Principal
+      </button>
+      <button id="nuevaBatallaBtn" class="restart-btn" onclick="location.reload()" style="background:linear-gradient(135deg,#a800a8,#ff00ff);">
+        ⚔️ Nueva Batalla
+      </button>
+      <button id="revanchaBtn" class="restart-btn" onclick="handleRevancha()" style="background:linear-gradient(135deg,#4a1d96,#7c3aed); display:none;">
+        🔄 Revancha
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Buff/Debuff Guide Modal -->
+<div id="buffDebuffModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1100; overflow-y:auto; padding:20px;">
+  <div class="card card-glow-blue" style="max-width:780px; margin:0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+      <div class="section-label" style="margin:0;">📖 Guía de Buffs y Debuffs</div>
+      <button onclick="document.getElementById('buffDebuffModal').style.display='none'" class="btn btn-danger btn-icon">✕</button>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;" id="buffDebuffContent"></div>
+  </div>
+</div>
+
+<!-- Summon Info Modal -->
+<div id="summonInfoModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:99999; overflow-y:auto; padding:20px;">
+  <div class="card card-glow-violet" style="max-width:500px; margin:40px auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+      <div class="section-label" id="summonInfoTitle" style="margin:0;">🔮 Invocación</div>
+      <button onclick="document.getElementById('summonInfoModal').style.display='none'" class="btn btn-danger btn-icon">✕</button>
+    </div>
+    <div id="summonInfoContent"></div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     CHAT UI
+════════════════════════════════════════════ -->
+<button id="chatToggleBtn" onclick="toggleChat()">
+  💬 CHAT
+  <span id="chatUnreadBadge" style="display:none; align-items:center; justify-content:center; background:var(--plasma-red); color:white; border-radius:50%; width:18px; height:18px; font-size:.62rem; font-weight:700; position:absolute; top:-6px; right:-6px;"></span>
+</button>
+
+<div id="chatPanel">
+  <div id="chatHeader">
+    <span>💬 Chat en Partida</span>
+    <button onclick="toggleChat()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1rem;">✕</button>
+  </div>
+  <div id="chatMessages"></div>
+  <div id="chatInputRow">
+    <input id="chatInput" type="text" placeholder="Escribe un mensaje..." maxlength="120" onkeydown="if(event.key==='Enter') sendChatMessage()">
+    <button id="chatSendBtn" onclick="sendChatMessage()">➤</button>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     SCREENS: INVENTORY / MARKET / BOSS / ADMIN
+     (Preserved from original — styles updated via CSS vars)
+════════════════════════════════════════════ -->
+
+<!-- INVENTARIO -->
+<div id="inventoryScreen" style="display:none; position:fixed; inset:0; background:rgba(4,6,15,0.97); z-index:5000; overflow-y:auto; padding:20px; box-sizing:border-box;">
+  <div style="max-width:900px; margin:0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:1.8rem; color:#c084fc; letter-spacing:.1em; text-shadow:0 0 20px rgba(139,92,246,0.4);">🎒 INVENTARIO</div>
+      <button onclick="hideInventoryScreen()" class="btn btn-danger btn-sm">✕ Cerrar</button>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px;">
+      <div class="card card-glow-gold" style="text-align:center; padding:16px;">
+        <img src="https://i.ibb.co/Q7t26McR/Captura-de-pantalla-2026-05-07-155804.png" style="width:36px;height:36px;object-fit:contain;margin-bottom:8px;" alt="">
+        <div id="inv-gold" style="font-family:'Bebas Neue',sans-serif; font-size:1.6rem; color:var(--plasma-gold);">0</div>
+        <div class="text-muted" style="font-size:.7rem; letter-spacing:.1em;">ORO</div>
+      </div>
+      <div class="card card-glow-violet" style="text-align:center; padding:16px;">
+        <img src="https://i.ibb.co/8D3s84Nw/image-53bcf67.png" style="width:36px;height:36px;object-fit:contain;margin-bottom:8px;" alt="">
+        <div id="inv-runes" style="font-family:'Bebas Neue',sans-serif; font-size:1.6rem; color:#c084fc;">0</div>
+        <div class="text-muted" style="font-size:.7rem; letter-spacing:.1em;">RUNAS</div>
+      </div>
+      <div class="card card-glow-blue" style="text-align:center; padding:16px;">
+        <div style="font-size:2rem; margin-bottom:8px;">🗝️</div>
+        <div id="inv-keys" style="font-family:'Bebas Neue',sans-serif; font-size:1.6rem; color:var(--plasma-blue);">0</div>
+        <div class="text-muted" style="font-size:.7rem; letter-spacing:.1em;">LLAVES</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; margin-bottom:16px;">
+      <button onclick="showInvTab('relics')" class="btn btn-violet btn-full btn-sm">💎 Reliquias</button>
+      <button onclick="showInvTab('characters')" class="btn btn-full btn-sm" style="background:rgba(79,195,247,0.1);border:1px solid rgba(79,195,247,0.3);color:#4fc3f7;">👤 Personajes</button>
+    </div>
+    <div id="inv-tab-relics">
+      <div id="inv-relics-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px;"></div>
+    </div>
+    <div id="inv-tab-characters" style="display:none;">
+      <div id="inv-chars-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:10px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- EQUIPAR PERSONAJE -->
+<div id="equipCharScreen" style="display:none; position:fixed; inset:0; background:rgba(4,6,15,0.97); z-index:5100; overflow-y:auto; padding:20px; box-sizing:border-box;">
+  <div style="max-width:600px; margin:0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <div id="equip-char-name" style="font-family:'Chakra Petch',sans-serif; font-size:1.1rem; color:var(--plasma-blue); font-weight:700;">Personaje</div>
+      <button onclick="document.getElementById('equipCharScreen').style.display='none'" class="btn btn-danger btn-sm">✕</button>
+    </div>
+    <div id="equip-slots-container" style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;"></div>
+    <div id="equip-relic-picker" style="display:none;">
+      <div class="section-label">Elige una Reliquia</div>
+      <div id="equip-relic-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MERCADO -->
+<div id="marketScreen" style="display:none; position:fixed; inset:0; background:rgba(4,6,15,0.97); z-index:5000; overflow-y:auto; padding:20px; box-sizing:border-box;">
+  <div style="max-width:900px; margin:0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:1.8rem; color:var(--plasma-gold); letter-spacing:.1em; text-shadow:0 0 20px rgba(245,158,11,0.4);">🏪 MERCADO</div>
+      <button onclick="hideMarketScreen()" class="btn btn-danger btn-sm">✕ Cerrar</button>
+    </div>
+    <div style="display:flex; gap:8px; margin-bottom:16px;">
+      <button onclick="showMarketTab('daily')" class="btn btn-gold btn-full btn-sm">📅 Tienda Diaria</button>
+      <button onclick="showMarketTab('listings')" class="btn btn-ghost btn-full btn-sm">🔄 Publicaciones</button>
+      <button onclick="showMarketTab('sell')" class="btn btn-ghost btn-full btn-sm">💰 Vender</button>
+    </div>
+    <div id="market-daily-tab">
+      <div id="market-daily-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;"></div>
+    </div>
+    <div id="market-listings-tab" style="display:none;">
+      <div id="market-listings-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
+    <div id="market-sell-tab" style="display:none;">
+      <div class="card">
+        <div class="text-secondary" style="font-size:.85rem; margin-bottom:16px;">Selecciona una reliquia de tu inventario para vender:</div>
+        <div id="market-sell-relics" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; margin-bottom:16px;"></div>
+        <div id="market-sell-form" style="display:none;">
+          <div class="text-gold" style="font-size:.8rem; margin-bottom:8px;" id="market-sell-selected-name"></div>
+          <select id="market-sell-type" style="background:var(--bg-surface); border:1px solid var(--border-medium); color:var(--plasma-blue); border-radius:var(--radius-sm); padding:8px; width:100%; font-size:.8rem; margin-bottom:8px;">
+            <option value="quick">Venta Rápida (precio fijo)</option>
+            <option value="public">Venta Pública (precio libre)</option>
+          </select>
+          <div id="market-sell-price-row" style="display:none; margin-bottom:8px;">
+            <input type="number" id="market-sell-price-input" placeholder="Precio en oro" style="background:var(--bg-surface); border:1px solid var(--border-gold); color:var(--plasma-gold); border-radius:var(--radius-sm); padding:8px; width:100%; font-size:.85rem; box-sizing:border-box;">
+          </div>
+          <button onclick="confirmSellRelic()" class="btn btn-full" style="background:rgba(16,185,129,0.15); border:1px solid var(--plasma-green); color:var(--plasma-green); font-family:'Chakra Petch',sans-serif;">
+            ✅ Confirmar Venta
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JEFE DE SALA -->
+<div id="bossScreen" style="display:none; position:fixed; inset:0; background:rgba(4,6,15,0.97); z-index:5000; overflow-y:auto; padding:20px; box-sizing:border-box;">
+  <div style="max-width:700px; margin:0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:1.8rem; color:var(--plasma-red); letter-spacing:.1em; text-shadow:0 0 20px rgba(255,51,102,0.4);">⚔️ JEFE DE SALA</div>
+      <button onclick="hideBossScreen()" class="btn btn-danger btn-sm">✕ Cerrar</button>
+    </div>
+    <div id="boss-content"></div>
+  </div>
+</div>
+
+<!-- PANEL ADMINISTRADOR -->
+<div id="adminScreen" style="display:none; position:fixed; inset:0; background:rgba(4,6,15,0.98); z-index:6000; overflow-y:auto; padding:20px; box-sizing:border-box;">
+  <div style="max-width:700px; margin:0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:1.8rem; color:var(--plasma-gold); letter-spacing:.1em;">👑 ADMINISTRADOR</div>
+      <button onclick="document.getElementById('adminScreen').style.display='none'" class="btn btn-danger btn-sm">✕</button>
+    </div>
+    <!-- Admin content preserved from original -->
+    <div id="admin-boss-status-card" class="card card-glow-red" style="margin-bottom:16px;">
+      <div class="section-label">📡 Evento Activo Ahora</div>
+      <div id="admin-active-boss-info" class="text-muted" style="font-size:.78rem;">Cargando...</div>
+    </div>
+    <div class="card card-glow-gold" style="margin-bottom:16px;">
+      <div class="section-label">⚔️ Activar Jefe de Sala</div>
+      <div id="admin-boss-cards" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin-bottom:14px;"></div>
+      <input type="hidden" id="admin-boss-select" value="broly">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+        <span class="text-secondary" style="font-size:.74rem; flex:1;">⏱️ Duración del evento</span>
+        <select id="admin-boss-duration" onchange="adminUpdateBossDates()" style="background:var(--bg-surface); border:1px solid var(--border-gold); color:var(--plasma-gold); border-radius:var(--radius-sm); padding:5px 8px; font-size:.75rem;">
+          <option value="7" selected>7 días</option>
+          <option value="3">3 días</option>
+          <option value="14">14 días</option>
+          <option value="1">1 día (prueba)</option>
+        </select>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+        <div>
+          <label class="text-muted" style="font-size:.72rem; display:block; margin-bottom:3px;">Inicio</label>
+          <input type="datetime-local" id="admin-start-date" style="width:100%; background:var(--bg-surface); border:1px solid var(--border-gold); color:var(--plasma-gold); border-radius:var(--radius-sm); padding:7px; font-size:.76rem; box-sizing:border-box;">
+        </div>
+        <div>
+          <label class="text-muted" style="font-size:.72rem; display:block; margin-bottom:3px;">Fin (auto)</label>
+          <input type="datetime-local" id="admin-end-date" style="width:100%; background:var(--bg-surface); border:1px solid var(--border-gold); color:var(--plasma-gold); border-radius:var(--radius-sm); padding:7px; font-size:.76rem; box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button onclick="adminActivateBossUI()" class="btn btn-full" style="flex:2; background:rgba(16,185,129,0.15); border:1px solid var(--plasma-green); color:var(--plasma-green);">✅ Activar Evento</button>
+        <button onclick="adminDeactivateBoss()" class="btn btn-danger" style="flex:1;">🛑 Detener</button>
+      </div>
+    </div>
+    <div class="card card-glow-gold">
+      <div class="section-label">📊 Ranking Actual</div>
+      <button onclick="loadAdminRanking()" class="btn btn-ghost btn-full btn-sm" style="margin-bottom:12px;">🔄 Actualizar</button>
+      <div id="admin-ranking-list" style="display:flex; flex-direction:column; gap:8px; max-height:400px; overflow-y:auto;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BOSS ACTIVATION MODAL (Admin Quick) -->
+<div id="bossActivationModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.93); z-index:9000; align-items:center; justify-content:center;">
+  <div class="card card-glow-red" style="max-width:480px; width:90%; max-height:90vh; overflow-y:auto; padding:28px 24px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <div style="font-family:'Bebas Neue',sans-serif; color:var(--plasma-red); font-size:1.4rem; letter-spacing:.08em;">⚔️ Activar Jefe de Sala</div>
+      <button onclick="document.getElementById('bossActivationModal').style.display='none'" class="btn btn-danger btn-sm btn-icon">✕</button>
+    </div>
+    <div id="bam-active-status" class="card" style="margin-bottom:20px; font-size:.76rem;" >Cargando estado...</div>
+    <div class="section-label">Jefes Disponibles</div>
+    <!-- Broly card -->
+    <div class="card card-glow-red" style="margin-bottom:12px;">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <img src="https://i.ibb.co/wrhphbYm/image.jpg" style="width:72px; height:72px; object-fit:cover; border-radius:var(--radius-md); border:2px solid var(--plasma-red); flex-shrink:0;" onerror="this.style.display='none'" alt="Broly">
+        <div style="flex:1;">
+          <div style="font-family:'Bebas Neue',sans-serif; color:var(--plasma-red); font-size:1.1rem; letter-spacing:.06em;">BROLY</div>
+          <div class="text-secondary" style="font-size:.68rem;">Legendario Super Sayajin</div>
+          <div style="display:flex; gap:10px; margin-top:5px;">
+            <span class="badge badge-red">❤️ 10,000 HP</span>
+            <span class="badge badge-blue">⚡ VEL 95</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; margin:12px 0;">
+        <span class="text-secondary" style="font-size:.72rem; flex:1;">⏱️ Duración:</span>
+        <select id="bam-duration" style="background:var(--bg-surface); border:1px solid rgba(255,51,102,0.4); color:var(--plasma-red); border-radius:var(--radius-sm); padding:5px 10px; font-size:.74rem; cursor:pointer;">
+          <option value="7" selected>7 días</option>
+          <option value="3">3 días</option>
+          <option value="14">14 días</option>
+          <option value="1">1 día (prueba)</option>
+        </select>
+      </div>
+      <button onclick="window.bamActivateBoss('broly')" class="btn btn-danger btn-full">
+        ⚔️ Activar — BROLY
+      </button>
+    </div>
+    <button onclick="window.bamDeactivateBoss()" class="btn btn-ghost btn-full btn-sm">
+      🛑 Desactivar Evento Actual
+    </button>
+  </div>
+</div>
+
+<!-- RANKED TEAM SCREEN -->
+<div id="rankedTeamScreen" style="display:none; position:fixed; inset:0; background:rgba(4,6,15,0.97); z-index:5000; overflow-y:auto; padding:24px; box-sizing:border-box;">
+  <div style="max-width:1000px; margin:0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+      <div>
+        <div style="font-family:'Bebas Neue',sans-serif; font-size:1.8rem; color:var(--plasma-blue); letter-spacing:.08em;">⚔️ Equipo Ranked</div>
+        <div class="text-muted" style="font-size:.78rem; margin-top:2px;">Define tu equipo de Ataque y Defensa</div>
+      </div>
+      <button onclick="hideRankedTeamScreen()" class="btn btn-danger btn-sm">✕ Cerrar</button>
+    </div>
+    <div id="rankedTeamSaveMsg" style="display:none;" class="card card-glow-green" style="margin-bottom:16px;"></div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px;">
+      <div class="card card-glow-blue">
+        <div class="section-label">🗡️ Equipo de Ataque</div>
+        <div id="rtAttackSlots" style="display:flex; flex-direction:column; gap:8px; min-height:280px;"></div>
+      </div>
+      <div class="card card-glow-violet">
+        <div class="section-label" style="color:#a78bfa;">🛡️ Equipo de Defensa</div>
+        <div id="rtDefenseSlots" style="display:flex; flex-direction:column; gap:8px; min-height:280px;"></div>
+      </div>
+    </div>
+    <div style="text-align:center; margin-bottom:24px;">
+      <button onclick="saveRankedTeams()" class="btn btn-lg" style="background:rgba(16,185,129,0.15); border:2px solid var(--plasma-green); color:var(--plasma-green); min-width:220px;">
+        💾 Guardar Equipos
+      </button>
+    </div>
+    <div class="card">
+      <div class="section-label">
+        Seleccionar para:
+        <span id="rtPickingFor" class="text-blue" style="margin-left:4px;">Equipo de Ataque</span>
+      </div>
+      <div id="rtCharGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(80px,1fr)); gap:8px;"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     JAVASCRIPT MODULES
+════════════════════════════════════════════ -->
+
+<!-- 1. Firebase, Auth, Lobby -->
+<script src="js/firebase-auth.js?v=20260527"></script>
+
+<!-- 2. Navigation helpers -->
+<script>
+  window.showInventoryScreen = function() {
+    document.getElementById('inventoryScreen').style.display = 'block';
+    loadInventoryData();
+  };
+  window.hideInventoryScreen = function() { document.getElementById('inventoryScreen').style.display = 'none'; };
+  window.showMarketScreen = function() {
+    document.getElementById('marketScreen').style.display = 'block';
+    showMarketTab('daily');
+  };
+  window.hideMarketScreen = function() { document.getElementById('marketScreen').style.display = 'none'; };
+  window.showBossScreen = function() {
+    document.getElementById('bossScreen').style.display = 'block';
+    if (typeof window.loadBossScreen === 'function') window.loadBossScreen();
+    else loadBossScreen();
+  };
+  window.hideBossScreen = function() { document.getElementById('bossScreen').style.display = 'none'; };
+  window.showAdminPanel = function() {
+    if (!isAdmin()) { alert('Acceso denegado.'); return; }
+    document.getElementById('adminScreen').style.display = 'block';
+    adminSelectBoss('broly', document.getElementById('bosscard-broly'));
+    adminUpdateBossDates();
+    adminLoadActiveBoss();
+  };
+
+  // Chat toggle
+  function toggleChat() {
+    const panel = document.getElementById('chatPanel');
+    panel.classList.toggle('open');
+  }
+
+  // Audio toggle
+  function toggleAudio() {
+    audioManager.toggleMute();
+  }
+
+  // Inv tabs
+  function showInvTab(tab) {
+    document.getElementById('inv-tab-relics').style.display = tab === 'relics' ? 'block' : 'none';
+    document.getElementById('inv-tab-characters').style.display = tab === 'characters' ? 'block' : 'none';
+  }
+</script>
+
+<!-- 3. Characters data -->
+<script src="js/characters.js?v=20260527"></script>
+
+<!-- 4. Audio + Game State -->
+<script src="js/audio-state.js?v=20260527"></script>
+
+<!-- 5. Skill Engine (NEW) -->
+<script src="js/skill-engine.js?v=20260527"></script>
+
+<!-- 6. Character Select -->
+<script>
+  // ======= CHARACTER SELECT LOGIC (unchanged from original) =======
+  const CS_TEAM_SIZE = 5;
+  let csState = { team1:[], team2:[], phase:'team1', pendingChar:null, gameMode:'multi' };
+
+  window.csSelectMode = function(mode) {
+    csState.gameMode = mode;
+    audioManager.playSelect();
+    document.getElementById('modeSelectScreen').style.display = 'none';
+    document.getElementById('charSelectScreen').style.display = 'block';
+    const myName = (typeof currentUser !== 'undefined' && currentUser && currentUser.displayName) ? currentUser.displayName : 'Jugador 1';
+    if (mode === 'solo') {
+      const lbl = document.getElementById('csPhaseLabel');
+      lbl.textContent = '🔷 ' + myName + ' — Elige tus 5 personajes (vs IA)';
+      lbl.className = 'cs-phase-label team1';
+      window._teamNames = { team1: myName, team2: 'IA' };
+      document.getElementById('csTeamName1').textContent = myName;
+      document.getElementById('csTeamName2').textContent = 'IA';
+    } else if (mode === 'boss') {
+      const lbl = document.getElementById('csPhaseLabel');
+      lbl.textContent = '⚔️ ' + myName + ' — Elige tus 5 guerreros';
+      lbl.className = 'cs-phase-label team1';
+      window._teamNames = { team1: myName, team2: 'Jefe de Sala' };
+      document.getElementById('csTeamName1').textContent = myName;
+      document.getElementById('csTeamName2').textContent = 'Jefe de Sala';
+    } else {
+      window._teamNames = { team1: 'Jugador 1', team2: 'Jugador 2' };
+      document.getElementById('csTeamName1').textContent = 'Jugador 1';
+      document.getElementById('csTeamName2').textContent = 'Jugador 2';
+      const lbl = document.getElementById('csPhaseLabel');
+      lbl.textContent = '🔷 Jugador 1 — Elige tus 5 personajes';
+      lbl.className = 'cs-phase-label team1';
+    }
+    csInit();
+  };
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function elHTML(tag, cls, html) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html !== undefined) e.innerHTML = html;
+    return e;
+  }
+  function imgEl(src, alt, cls) {
+    const i = document.createElement('img');
+    i.src = src; i.alt = alt; i.loading = 'eager'; i.referrerPolicy = 'no-referrer';
+    if (cls) i.className = cls;
+    i.onerror = function() { this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex'; };
+    return i;
+  }
+
+  function csRemoveChar(team, index) {
+    audioManager.playSelect();
+    if (team === 'team1') {
+      csState.team1.splice(index, 1);
+      if (csState.gameMode !== 'online') { if (csState.phase === 'team2' || csState.phase === 'done') csState.phase = 'team1'; }
+    } else {
+      csState.team2.splice(index, 1);
+      if (csState.gameMode !== 'online') { if (csState.phase === 'done') csState.phase = 'team2'; }
+    }
+    if (csState.gameMode === 'online') {
+      const myTeam = isRoomHost ? 'team1' : 'team2';
+      if (csState[myTeam].length < CS_TEAM_SIZE) { const btn = document.getElementById('onlineReadyBtn'); if(btn) btn.style.display='none'; }
+    }
+    csRenderSlots(); csRenderGrid();
+    if (csState.phase === 'team1') {
+      const lbl = document.getElementById('csPhaseLabel');
+      lbl.textContent = '🔷 HUNTERS — Elige tus 5 personajes' + (csState.gameMode === 'solo' ? ' (vs IA)' : '');
+      lbl.className = 'cs-phase-label team1';
+    } else if (csState.phase === 'team2') {
+      const lbl = document.getElementById('csPhaseLabel');
+      lbl.textContent = '🔶 REAPERS — Elige tus 5 personajes';
+      lbl.className = 'cs-phase-label team2';
+    }
+  }
+
+  function csInit() { csRenderSlots(); csRenderGrid(); }
+
+  function csRenderSlots() {
+    const t1 = document.getElementById('csTeam1Slots');
+    const t2 = document.getElementById('csTeam2Slots');
+    if (!t1 || !t2) return;
+    t1.innerHTML = ''; t2.innerHTML = '';
+    for (let i = 0; i < CS_TEAM_SIZE; i++) {
+      ['team1','team2'].forEach(function(team, ti) {
+        const container = ti === 0 ? t1 : t2;
+        const name = csState[team][i];
+        const slot = document.createElement('div');
+        slot.className = 'cs-slot' + (name ? ' filled ' + team : '');
+        slot.style.position = 'relative';
+        if (name) {
+          const char = characterData[name];
+          if (char && char.portrait) {
+            const img = imgEl(char.portrait, name, '');
+            img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+            slot.appendChild(img);
+          } else {
+            const ico = document.createElement('span'); ico.style.fontSize = '1.4em'; ico.textContent = '⚔️';
+            slot.appendChild(ico);
+          }
+          slot.appendChild(el('div', 'cs-slot-name', name.split(' ')[0]));
+          const canRemove = (team === 'team1') ? (csState.gameMode !== 'solo' && (csState.gameMode !== 'online' || isRoomHost)) : (csState.gameMode !== 'solo' && (csState.gameMode !== 'online' || !isRoomHost));
+          if (canRemove) {
+            const xBtn = document.createElement('button');
+            xBtn.textContent = '✕';
+            xBtn.style.cssText = 'position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;border:none;background:var(--plasma-red);color:#fff;font-size:.65rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:10;';
+            (function(idx, t) { xBtn.onclick = function(e) { e.stopPropagation(); csRemoveChar(t, idx); }; })(i, team);
+            slot.appendChild(xBtn);
+          }
+        } else {
+          slot.textContent = team === 'team2' && csState.gameMode === 'solo' ? '🤖' : String(i + 1);
+        }
+        container.appendChild(slot);
+      });
+    }
+  }
+
+  function csRenderGrid() {
+    const grid = document.getElementById('csGrid');
+    grid.innerHTML = '';
+    for (const name in characterData) {
+      try {
+        const char = characterData[name];
+        if (!char || !char.abilities) continue;
+        const inT1 = csState.team1.filter(n => n === name).length > 0;
+        const inT2 = csState.team2.filter(n => n === name).length > 0;
+        const card = document.createElement('div');
+        card.className = 'cs-char-card' + (inT1 && inT2 ? ' selected-both' : inT1 ? ' selected-team1' : inT2 ? ' selected-team2' : '');
+        if (char.portrait) {
+          const img = imgEl(char.portrait, name, 'cs-char-img'); card.appendChild(img);
+          const ph = el('div', 'cs-char-img-placeholder', '⚔️'); ph.style.display='none'; card.appendChild(ph);
+        } else { card.appendChild(el('div','cs-char-img-placeholder','⚔️')); }
+        const info = el('div', 'cs-char-info');
+        info.appendChild(el('div', 'cs-char-name', name));
+        info.appendChild(el('div', 'cs-char-speed', '⚡ ' + (char.speed || '?')));
+        if (inT1) info.appendChild(el('span','cs-team-badge team1','🔷'));
+        if (inT2) info.appendChild(el('span','cs-team-badge team2','🔶'));
+        card.appendChild(info);
+        card.onclick = (function(n) { return function() { csShowDetail(n); }; })(name);
+        grid.appendChild(card);
+      } catch(err) { console.error('Error rendering card:', name, err); }
+    }
+  }
+
+  const SUMMON_CATALOGUE = {
+    'Igris': { hp:10, passive:'Ataca con 3 de daño a un enemigo aleatorio al inicio de cada ronda.' },
+    'Tusk': { hp:8, passive:'Aplica Sangrado a un enemigo aleatorio por 2 turnos al inicio de cada ronda.' },
+    'Beru': { hp:12, passive:'Ataca con 5 de daño y aplica Veneno a un enemigo aleatorio al inicio de cada ronda.' },
+    'Kamish': { hp:30, passive:'Mega Provocación: absorbe todo el daño ST y AOE del equipo.' },
+  };
+
+  function csShowDetail(name) {
+    try {
+      const char = characterData[name];
+      if (!char) return;
+      csState.pendingChar = name;
+      const currentTeam = (csState.gameMode === 'online' && csState.onlineTeam) ? csState.onlineTeam : csState.phase;
+      const isT1 = currentTeam === 'team1';
+      const teamLabel = isT1 ? '🔷 HUNTERS' : '🔶 REAPERS';
+      const teamColor = isT1 ? 'var(--team1)' : 'var(--team2)';
+      const modal = document.getElementById('csDetailContent');
+      modal.innerHTML = '';
+      // Hero
+      const hero = el('div', 'cs-detail-hero');
+      const pw = el('div', 'cs-detail-portrait-wrap');
+      if (char.portrait) {
+        pw.appendChild(imgEl(char.portrait, name, 'cs-detail-portrait'));
+        const ph = el('div','cs-detail-portrait-fallback','⚔️'); ph.style.display='none'; pw.appendChild(ph);
+      } else { pw.appendChild(el('div','cs-detail-portrait-fallback','⚔️')); }
+      hero.appendChild(pw);
+      const meta = el('div','cs-detail-meta');
+      meta.appendChild(el('div','cs-detail-name', name));
+      const stats = el('div','cs-detail-stats');
+      stats.appendChild(el('div','cs-detail-stat','⚡ ' + (char.speed||'?')));
+      stats.appendChild(el('div','cs-detail-stat','❤️ ' + (char.hp||'?') + ' HP'));
+      meta.appendChild(stats);
+      if (char.passive) {
+        const pb = el('div','cs-detail-passive');
+        pb.appendChild(el('div','cs-detail-passive-title','✨ PASIVA: ' + char.passive.name));
+        pb.appendChild(el('div','',char.passive.description));
+        meta.appendChild(pb);
+      }
+      hero.appendChild(meta);
+      modal.appendChild(hero);
+      // Abilities
+      const aw = el('div','cs-detail-abilities');
+      (char.abilities||[]).forEach(ab => {
+        const ad = el('div','cs-detail-ability');
+        ad.appendChild(el('div','cs-detail-ability-name', ab.name||''));
+        ad.appendChild(el('div','cs-detail-ability-desc', ab.description||'Sin descripción.'));
+        const footer = el('div','cs-detail-ability-footer');
+        footer.appendChild(el('span','cs-detail-ability-cost','💎 ' + (ab.cost||0)));
+        footer.appendChild(el('span','cs-detail-ability-type badge badge-' + (ab.type==='over'?'over':ab.type==='special'?'violet':'blue'), ab.type||''));
+        ad.appendChild(footer);
+        aw.appendChild(ad);
+      });
+      modal.appendChild(aw);
+      // Question
+      const q = el('div','cs-detail-question');
+      q.appendChild(document.createTextNode('¿Añadir '));
+      const ns = el('span','',name); ns.style.color=teamColor; ns.style.fontWeight='700';
+      q.appendChild(ns);
+      q.appendChild(document.createTextNode(' a ' + teamLabel + '?'));
+      modal.appendChild(q);
+      // Buttons
+      const btns = el('div','cs-detail-btns');
+      const yes = el('button','cs-confirm-btn yes','✅ Sí, seleccionar');
+      yes.onclick = function() { csConfirm(true); };
+      const no = el('button','cs-confirm-btn no','❌ Cancelar');
+      no.onclick = function() { csConfirm(false); };
+      btns.appendChild(yes); btns.appendChild(no);
+      modal.appendChild(btns);
+      document.getElementById('csDetailModal').classList.add('show');
+    } catch(err) { console.error('csShowDetail error:', err); }
+  }
+
+  function csConfirm(yes) {
+    try {
+      document.getElementById('csDetailModal').classList.remove('show');
+      if (!yes || !csState.pendingChar) { csState.pendingChar = null; return; }
+      const name = csState.pendingChar; csState.pendingChar = null;
+      audioManager.playSelect();
+      let phase = csState.gameMode === 'online' ? csState.onlineTeam : csState.phase;
+      if (phase === 'team1') {
+        if (csState.team1.includes(name)) { alert('⚠️ ' + name + ' ya está en tu equipo.'); return; }
+        csState.team1.push(name);
+        if (csState.team1.length >= CS_TEAM_SIZE) {
+          if (csState.gameMode === 'boss') { csState.phase='done'; csRenderSlots(); csRenderGrid(); setTimeout(csStartGame, 800); return; }
+          else if (csState.gameMode === 'solo') { csState.phase='done'; csAIPickTeam(); csRenderSlots(); setTimeout(csStartGame, 800); return; }
+          else if (csState.gameMode === 'online') { csState.phase='done'; csRenderSlots(); csRenderGrid(); showOnlineReadyBtn(); return; }
+          else { csState.phase='team2'; const lbl=document.getElementById('csPhaseLabel'); lbl.textContent='🔶 '+(window._teamNames&&window._teamNames.team2||'Jugador 2')+' — Elige tus 5 personajes'; lbl.className='cs-phase-label team2'; }
+        }
+      } else if (phase === 'team2') {
+        if (csState.team2.includes(name)) { alert('⚠️ ' + name + ' ya está en tu equipo.'); return; }
+        csState.team2.push(name);
+        if (csState.team2.length >= CS_TEAM_SIZE) { if(csState.gameMode==='online'){csState.phase='done';csRenderSlots();csRenderGrid();showOnlineReadyBtn();return;} csState.phase='done'; csStartGame(); return; }
+      }
+      csRenderSlots(); csRenderGrid();
+    } catch(err) { console.error('csConfirm error:', err); }
+  }
+
+  function csAIPickTeam() {
+    if (window._revanchaAITeamFixed && csState.team2 && csState.team2.length === CS_TEAM_SIZE) { window._revanchaAITeamFixed=false; return; }
+    window._revanchaAITeamFixed = false;
+    const all = Object.keys(characterData).filter(n=>characterData[n]&&characterData[n].abilities);
+    csState.team2 = all.slice().sort(()=>Math.random()-0.5).slice(0, CS_TEAM_SIZE);
+    addLog('🤖 La IA ha seleccionado su equipo.','info');
+  }
+
+  window._teamNames = { team1:'Jugador 1', team2:'Jugador 2' };
+  function getTeamLabel(team) { return (window._teamNames&&window._teamNames[team])||(team==='team1'?'HUNTERS':'REAPERS'); }
+
+  function csStartGame() {
+    try {
+      const selectedChars = {};
+      const nameCount = {};
+      csState.team1.map(n=>({name:n,team:'team1'})).concat(csState.team2.map(n=>({name:n,team:'team2'}))).forEach(function(entry){
+        const base = entry.name;
+        nameCount[base] = (nameCount[base]||0)+1;
+        const key = nameCount[base]>1 ? base+' v'+nameCount[base] : base;
+        const copy = JSON.parse(JSON.stringify(characterData[base]));
+        copy.team = entry.team; copy.baseName = base;
+        selectedChars[key] = copy;
+      });
+      ['loginScreen','lobbyScreen','waitingScreen','modeSelectScreen','charSelectScreen'].forEach(function(id){
+        const el2 = document.getElementById(id); if(el2) el2.style.display='none';
+      });
+      document.querySelector('.game-container').style.display = 'flex';
+      initGame(selectedChars);
+      const myName = (typeof currentUser!=='undefined'&&currentUser&&currentUser.displayName)?currentUser.displayName:'Jugador 1';
+      if (csState.gameMode==='boss') window._teamNames={team1:myName,team2:'Jefe de Sala'};
+      else if (csState.gameMode==='solo'||csState.gameMode==='ranked') window._teamNames={team1:myName,team2:window._rankedFakeOpponent||'IA'};
+      else if (csState.gameMode!=='online') window._teamNames={team1:'Jugador 1',team2:'Jugador 2'};
+      ['teamHeader1','teamHeader2','statusHeader1','statusHeader2'].forEach(function(id,i){
+        const el3=document.getElementById(id); if(el3) el3.textContent=(i<2?['🔷 ','🔶 ']:['🔷 ','🔶 '])[i%2]+getTeamLabel(i%2===0?'team1':'team2');
+      });
+      addLog('🎮 ¡Batalla iniciada! UNIVERSUS: Battle Collision','info');
+      if (csState.gameMode==='online') { setTimeout(function(){ if(isRoomHost)pushGameState(); listenGameState(); },500); }
+      gameState.gameMode = csState.gameMode; gameState.aiTeam='team2'; gameState.myTeam='team1';
+      if (window._rankedMode) { gameState.gameMode='ranked'; }
+      window.loadGameRelics();
+      audioManager.playRandomBattle();
+    } catch(err) { console.error('csStartGame error:', err); }
+  }
+</script>
+
+<!-- 7. AI Engine -->
+<script src="js/ai-engine.js?v=20260527"></script>
+
+<!-- 8. Init + Render -->
+<script src="js/init-render.js?v=20260527"></script>
+
+<!-- 9. Turn Logic -->
+<script src="js/turn-logic.js?v=20260527"></script>
+
+<!-- 10. Status Effects -->
+<script src="js/status-effects.js?v=20260527"></script>
+
+<!-- 11. Debuffs -->
+<script src="js/debuffs.js?v=20260527"></script>
+
+<!-- 12. Summons -->
+<script src="js/summons.js?v=20260527"></script>
+
+<!-- 13. Ability Select -->
+<script src="js/ability-select.js?v=20260527"></script>
+
+<!-- 14. Skills (original — legacy support) -->
+<script src="js/skills.js?v=20260527"></script>
+
+<!-- 15. Jefe de Sala -->
+<script src="js/jefe-de-sala.js?v=20260527"></script>
+
+<!-- 16. Inventory / Market / Admin logic (preserved inline) -->
+<script>
+  // ── Inventory / Market / Admin Logic ───────────────────────
+  // (All original inventory, market, and admin logic preserved here)
+  // This block contains the full content from the original index.html
+  // corresponding to these systems — they work with the new styles.
+
+  function _escHtmlInv(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  window.loadGameRelics = function() {
+    setTimeout(function() {
+      var user = firebase.auth().currentUser;
+      if (!user || typeof db === 'undefined') return;
+      var myTeamSlot = window._rankedPlayerTeam || 'team1';
+      var opTeamSlot = myTeamSlot === 'team1' ? 'team2' : 'team1';
+      var opUid = window._opponentUid || window._rankedDefenseOwnerUid || null;
+      function _loadRelicsForUid(uid, charNames, applyBonuses) {
+        charNames.forEach(function(charName) {
+          var baseName = charName.replace(/ v\d+$/, '');
+          db.ref('users/' + uid + '/characters/' + baseName + '/slots').once('value').then(function(snap) {
+            var equip = snap.val();
+            if (!equip) return;
+            var slots = [equip.slot1, equip.slot2, equip.slot3].filter(Boolean);
+            if (!slots.length) return;
+            var ch = gameState.characters[charName];
+            if (!ch) return;
+            ch.equippedRelics = slots;
+            if (applyBonuses && typeof RELICS_DATA !== 'undefined') {
+              slots.forEach(function(relicName) {
+                var rd = RELICS_DATA[relicName];
+                if (!rd) return;
+                if (rd.hpBonus) { ch.hp=(ch.hp||0)+rd.hpBonus; ch.maxHp=(ch.maxHp||0)+rd.hpBonus; }
+                if (rd.velBonus) { ch.speed=(ch.speed||0)+rd.velBonus; }
+                if (rd.effect==='speed_plus5'&&!ch._speedPlus5Applied) { ch.speed=(ch.speed||80)+5; ch._speedPlus5Applied=true; }
+                if (rd.effect==='hp_spd_plus3'&&!ch._hpSpdApplied) { ch.hp=(ch.hp||0)+3; ch.maxHp=(ch.maxHp||0)+3; ch.speed=(ch.speed||80)+3; ch._hpSpdApplied=true; }
+                if (rd.effect==='hp_max_50pct'&&!ch._hpMax50Applied) { var _b=Math.ceil((ch.maxHp||20)*0.5); ch.maxHp=(ch.maxHp||20)+_b; ch.hp=(ch.hp||0)+_b; ch._hpMax50Applied=true; }
+                if (rd.effect==='double_heal') { ch._doubleHeal=true; }
+              });
+            }
+            if (typeof renderCharacters==='function') renderCharacters();
+          }).catch(function(e){ console.error('[Relics]',charName,e); });
+        });
+      }
+      var myChars = Object.keys(gameState.characters).filter(function(n){ return gameState.characters[n]&&gameState.characters[n].team===myTeamSlot; });
+      _loadRelicsForUid(user.uid, myChars, true);
+      if (opUid) {
+        var opChars = Object.keys(gameState.characters).filter(function(n){ return gameState.characters[n]&&gameState.characters[n].team===opTeamSlot; });
+        _loadRelicsForUid(opUid, opChars, false);
+      }
+    }, 600);
+  };
+
+  // Stub functions for boss/admin screens
+  function loadBossScreen() {
+    var content = document.getElementById('boss-content');
+    if (content) content.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;font-family:Chakra Petch,sans-serif;font-size:.8rem;">Cargando módulo del Jefe de Sala...</div>';
+  }
+  async function initBossAttack() { alert('Módulo del Jefe de Sala no cargado. Recarga la página.'); }
+
+  window.showBossActivationModal = function() {
+    if (typeof isAdmin==='function'&&!isAdmin()) { alert('Acceso denegado.'); return; }
+    document.getElementById('bossActivationModal').style.display = 'flex';
+    bamLoadActiveStatus();
+  };
+
+  async function bamLoadActiveStatus() {
+    var el2 = document.getElementById('bam-active-status'); if (!el2) return;
+    try {
+      var boss = typeof window.getBossData==='function' ? await window.getBossData() : null;
+      if (!boss || boss.status!=='active') { el2.innerHTML='<span class="text-muted">⚫ Sin evento activo.</span>'; return; }
+      var hpPct = Math.max(0,Math.min(100,(boss.hp/(boss.maxHp||1))*100)).toFixed(1);
+      el2.innerHTML='<div style="display:flex;align-items:center;gap:10px;"><img src="'+boss.portrait+'" style="width:42px;height:42px;border-radius:7px;object-fit:cover;border:2px solid var(--plasma-red);" onerror="this.style.display=\'none\'"><div style="flex:1;"><div style="font-family:Chakra Petch,sans-serif;color:var(--plasma-red);font-size:.78rem;font-weight:700;">✅ ACTIVO: '+boss.name+'</div><div style="background:rgba(255,68,68,0.2);border-radius:4px;height:6px;margin:5px 0;overflow:hidden;"><div style="background:var(--plasma-red);height:100%;width:'+hpPct+'%;"></div></div><div style="font-size:.65rem;color:var(--text-secondary);">HP: '+(boss.hp||0).toLocaleString()+' / '+(boss.maxHp||0).toLocaleString()+'</div></div></div>';
+    } catch(e) { el2.innerHTML='<span class="text-muted">Error al cargar estado.</span>'; }
+  }
+
+  window.bamActivateBoss = async function(bossId) {
+    if (typeof isAdmin==='function'&&!isAdmin()) { alert('Acceso denegado.'); return; }
+    var bossConfig = typeof BOSS_DATA!=='undefined' ? BOSS_DATA[bossId] : null;
+    if (!bossConfig) { alert('Error: Jefe "'+bossId+'" no encontrado.'); return; }
+    var days = parseInt(document.getElementById('bam-duration').value)||7;
+    var now = new Date();
+    var end = new Date(now.getTime()+days*24*60*60*1000);
+    var pad = function(n){ return String(n).padStart(2,'0'); };
+    var fmt = function(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes()); };
+    try { await adminActivateBoss(bossId,bossConfig,fmt(now),fmt(end)); bamLoadActiveStatus(); if(typeof window.loadBossScreen==='function') window.loadBossScreen(); }
+    catch(e) { alert('Error al activar: '+e.message); }
+  };
+
+  window.bamDeactivateBoss = async function() {
+    if (typeof isAdmin==='function'&&!isAdmin()) { alert('Acceso denegado.'); return; }
+    if (!confirm('¿Desactivar el evento actual?')) return;
+    try { if(typeof adminDeactivateBoss==='function') await adminDeactivateBoss(); bamLoadActiveStatus(); if(typeof window.loadBossScreen==='function') window.loadBossScreen(); }
+    catch(e) { alert('Error al desactivar: '+e.message); }
+  };
+
+  function adminSelectBoss(bossId, el3) {
+    document.getElementById('admin-boss-select').value = bossId;
+    document.querySelectorAll('#admin-boss-cards > div').forEach(function(c){ c.style.border='1px solid rgba(255,68,68,0.3)'; });
+    if(el3) { el3.style.border='2px solid var(--plasma-gold)'; }
+  }
+
+  function adminUpdateBossDates() {
+    var days = parseInt(document.getElementById('admin-boss-duration').value)||7;
+    var now = new Date(); var pad=function(n){return String(n).padStart(2,'0');}; var fmt=function(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());};
+    var end = new Date(now.getTime()+days*24*60*60*1000);
+    document.getElementById('admin-start-date').value = fmt(now);
+    document.getElementById('admin-end-date').value = fmt(end);
+  }
+
+  async function adminLoadActiveBoss() {
+    var el4=document.getElementById('admin-active-boss-info'); if(!el4) return;
+    try {
+      var boss=await getBossData();
+      if(!boss||boss.status!=='active') { el4.innerHTML='<span class="text-muted">Sin evento activo.</span>'; return; }
+      var hpPct=Math.max(0,Math.min(100,((boss.hp||0)/(boss.maxHp||1))*100)).toFixed(1);
+      el4.innerHTML='<div style="display:flex;align-items:center;gap:12px;"><img src="'+boss.portrait+'" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:2px solid var(--plasma-red);" onerror="this.style.display=\'none\'"><div style="flex:1;"><div style="font-family:Chakra Petch,sans-serif;color:var(--plasma-red);font-size:.82rem;font-weight:700;">'+boss.name+'</div><div class="text-secondary" style="font-size:.7rem;">'+((boss.startDate||'').split(\'T\')[0])+' → '+((boss.endDate||'').split(\'T\')[0])+'</div><div style="background:rgba(255,68,68,0.15);border-radius:6px;height:8px;overflow:hidden;margin-top:5px;"><div style="background:var(--plasma-red);height:100%;width:'+hpPct+'%;border-radius:6px;"></div></div><div class="text-secondary" style="font-size:.68rem;margin-top:2px;">HP: '+(boss.hp||0).toLocaleString()+' / '+(boss.maxHp||0).toLocaleString()+'</div></div></div>';
+    } catch(e) { el4.innerHTML='<span class="text-muted">Error.</span>'; }
+  }
+
+  async function adminActivateBossUI() {
+    if(!isAdmin()){alert('Acceso denegado.');return;}
+    var bossId=document.getElementById('admin-boss-select').value;
+    var startDate=document.getElementById('admin-start-date').value;
+    var endDate=document.getElementById('admin-end-date').value;
+    if(!bossId||!startDate||!endDate){alert('Selecciona un jefe y verifica las fechas.');return;}
+    var bossConfig=typeof BOSS_DATA!=='undefined'?BOSS_DATA[bossId]:null;
+    if(!bossConfig){alert('Jefe no encontrado.');return;}
+    await adminActivateBoss(bossId,bossConfig,startDate,endDate);
+    adminLoadActiveBoss();
+  }
+
+  async function loadAdminRanking() {
+    const ranking=await adminGetRanking(); const list=document.getElementById('admin-ranking-list'); list.innerHTML='';
+    if(ranking.length===0){list.innerHTML='<div class="text-muted" style="font-size:.8rem;text-align:center;padding:16px;">Sin participantes aún.</div>';return;}
+    ranking.forEach(function(entry,i){
+      const el5=document.createElement('div');
+      el5.style.cssText='display:flex;justify-content:space-between;align-items:center;background:rgba(255,215,0,0.04);border:1px solid rgba(255,215,0,0.1);border-radius:var(--radius-sm);padding:8px 12px;';
+      el5.innerHTML='<span style="font-size:.8rem;color:var(--text-secondary);">'+(i+1)+'. '+(entry.playerName||entry.uid)+'</span><span style="font-size:.8rem;color:var(--plasma-red);font-weight:700;">'+(entry.totalDamage||0).toLocaleString()+' dmg</span>';
+      list.appendChild(el5);
+    });
+  }
+
+  // Market / Inventory logic preserved
+  function showMarketTab(tab) {
+    ['daily','listings','sell'].forEach(function(t){ const el6=document.getElementById('market-'+t+'-tab'); if(el6) el6.style.display=t===tab?'block':'none'; });
+    if(tab==='daily') loadDailyMarket();
+    if(tab==='listings') loadListings();
+    if(tab==='sell') loadSellTab();
+  }
+
+  async function loadInventoryData() {
+    const user=firebase.auth().currentUser; if(!user) return;
+    const data=await getPlayerData(user.uid);
+    document.getElementById('inv-gold').textContent=(data.gold||0).toLocaleString();
+    document.getElementById('inv-runes').textContent=data.attack_runes||0;
+    document.getElementById('inv-keys').textContent=data.arcane_keys||0;
+    const relics=(data.inventory&&data.inventory.relics)||{};
+    const grid=document.getElementById('inv-relics-grid'); grid.innerHTML='';
+    const tierColors={Raro:'#aaa',Especial:'#4fc3f7',Epico:'#c864ff',Legendario:'#ffd700'};
+    Object.entries(relics).forEach(function([name,qty]){
+      if(!qty||qty<=0) return;
+      const rd=typeof RELICS_DATA!=='undefined'?RELICS_DATA[name]:null; if(!rd) return;
+      const color=tierColors[rd.tier]||'#aaa';
+      const card=document.createElement('div');
+      card.style.cssText='background:rgba(255,255,255,0.04);border:1px solid '+color+';border-radius:var(--radius-md);padding:10px;text-align:center;position:relative;cursor:pointer;transition:var(--transition);';
+      card.onmouseover=function(){this.style.boxShadow='0 0 12px '+color+'55';};
+      card.onmouseout=function(){this.style.boxShadow='none';};
+      card.onclick=(function(n,r,c){return function(e){e.stopPropagation();showRelicTooltip(n,r,c,this);};})(name,rd,color);
+      card.innerHTML='<img src="'+rd.img+'" style="width:56px;height:56px;object-fit:contain;border-radius:6px;" onerror="this.style.display=\'none\'">'+'<div style="font-size:.68rem;color:var(--text-secondary);margin-top:6px;line-height:1.2;">'+name+'</div>'+'<div style="font-size:.65rem;color:'+color+';">'+rd.tier+'</div>'+'<div style="position:absolute;top:6px;right:6px;background:'+color+';color:#000;border-radius:10px;padding:2px 6px;font-size:.65rem;font-weight:700;">×'+qty+'</div>'+'<div style="display:flex;gap:4px;margin-top:6px;"><button data-uid="'+_escHtmlInv(user.uid)+'" data-name="'+_escHtmlInv(name)+'" onclick="event.stopPropagation();var b=this;quickSellRelic(b.dataset.uid,b.dataset.name).then(function(){loadInventoryData()})" style="flex:1;background:rgba(255,68,68,0.2);border:1px solid #ff4444;color:#ff4444;border-radius:6px;padding:3px;font-size:.6rem;cursor:pointer;">Vender</button></div>';
+      grid.appendChild(card);
+    });
+    if(grid.innerHTML==='') grid.innerHTML='<div style="color:var(--text-muted);font-size:.8rem;grid-column:1/-1;text-align:center;padding:24px;">No tienes reliquias en tu inventario.</div>';
+    const charsGrid=document.getElementById('inv-chars-grid'); charsGrid.innerHTML='';
+    if(typeof characterData!=='undefined'){
+      Object.keys(characterData).forEach(function(name){
+        const cd=characterData[name]; const portrait=typeof getCharPortrait==='function'?getCharPortrait(name):(cd.portrait||'');
+        const charSlots=data.characters&&data.characters[name]&&data.characters[name].slots?data.characters[name].slots:{};
+        const equippedCount=Object.values(charSlots).filter(Boolean).length;
+        const card=document.createElement('div');
+        card.style.cssText='background:rgba(79,195,247,0.05);border:1px solid rgba(79,195,247,0.2);border-radius:var(--radius-md);padding:8px;text-align:center;cursor:pointer;transition:var(--transition);';
+        card.onmouseover=function(){this.style.borderColor='#4fc3f7';};
+        card.onmouseout=function(){this.style.borderColor='rgba(79,195,247,0.2)';};
+        card.onclick=function(){openEquipCharScreen(name,user.uid);};
+        card.innerHTML='<img src="'+portrait+'" style="width:60px;height:60px;object-fit:cover;border-radius:8px;" referrerpolicy="no-referrer">'+'<div style="font-size:.6rem;color:var(--text-secondary);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+name.split(' ')[0]+'</div>'+'<div style="font-size:.58rem;color:#4fc3f7;">'+equippedCount+'/3 slots</div>';
+        charsGrid.appendChild(card);
+      });
+    }
+  }
+
+  let _equipCharName=null,_equipUid=null,_equipSlotIndex=null;
+  async function openEquipCharScreen(charName,uid){_equipCharName=charName;_equipUid=uid;document.getElementById('equip-char-name').textContent='⚔️ '+charName;document.getElementById('equipCharScreen').style.display='block';document.getElementById('equip-relic-picker').style.display='none';await renderEquipSlots(charName,uid);}
+  async function renderEquipSlots(charName,uid){const data=await getPlayerData(uid);const slots=(data.characters&&data.characters[charName]&&data.characters[charName].slots)||{};const container=document.getElementById('equip-slots-container');container.innerHTML='';const tierColors={Raro:'#aaa',Especial:'#4fc3f7',Epico:'#c864ff',Legendario:'#ffd700'};[1,2,3].forEach(function(i){const slotKey='slot'+i;const equipped=slots[slotKey];const rd=equipped&&typeof RELICS_DATA!=='undefined'?RELICS_DATA[equipped]:null;const color=rd?(tierColors[rd.tier]||'#aaa'):'rgba(255,255,255,0.15)';const slotEl=document.createElement('div');slotEl.style.cssText='background:rgba(255,255,255,0.04);border:2px solid '+color+';border-radius:var(--radius-md);padding:14px;display:flex;align-items:center;gap:12px;';if(equipped&&rd){slotEl.innerHTML='<img src="'+rd.img+'" style="width:48px;height:48px;object-fit:contain;border-radius:8px;">'+'<div style="flex:1;"><div style="font-size:.85rem;color:#fff;font-weight:700;">'+equipped+'</div><div style="font-size:.7rem;color:'+color+';">'+rd.tier+' · '+rd.slot+'</div><div style="font-size:.68rem;color:var(--text-secondary);margin-top:2px;">'+rd.desc+'</div></div>'+'<button data-uid="'+_escHtmlInv(uid)+'" data-char="'+_escHtmlInv(charName)+'" data-slot="'+i+'" onclick="event.stopPropagation();var b=this;removeRelic(b.dataset.uid,b.dataset.char,parseInt(b.dataset.slot)).then(function(){renderEquipSlots(b.dataset.char,b.dataset.uid)})" style="background:rgba(255,51,102,0.15);border:1px solid #ff3366;color:#ff3366;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.65rem;white-space:nowrap;">Remover<br><span style=\'color:#ffaa00\'>10,000 🥇</span></button>';}else{slotEl.innerHTML='<div style="width:48px;height:48px;border:2px dashed rgba(255,255,255,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:rgba(255,255,255,0.2);">+</div>'+'<div style="flex:1;color:rgba(255,255,255,0.4);font-size:.8rem;">Slot vacío</div>'+'<button onclick="openRelicPicker('+i+')" class="btn btn-primary btn-sm">Equipar</button>';}container.appendChild(slotEl);});}
+  async function openRelicPicker(slotIndex){_equipSlotIndex=slotIndex;const picker=document.getElementById('equip-relic-picker');picker.style.display='block';const grid=document.getElementById('equip-relic-grid');grid.innerHTML='';const user=firebase.auth().currentUser;if(!user)return;const data=await getPlayerData(user.uid);const relics=(data.inventory&&data.inventory.relics)||{};const tierColors={Raro:'#aaa',Especial:'#4fc3f7',Epico:'#c864ff',Legendario:'#ffd700'};let hasAny=false;Object.entries(relics).forEach(function([name,qty]){if(!qty||qty<=0)return;const rd=typeof RELICS_DATA!=='undefined'?RELICS_DATA[name]:null;if(!rd)return;hasAny=true;const color=tierColors[rd.tier]||'#aaa';const card=document.createElement('div');card.style.cssText='background:rgba(255,255,255,0.04);border:1px solid '+color+';border-radius:var(--radius-md);padding:10px;text-align:center;cursor:pointer;transition:var(--transition);';card.onmouseover=function(){this.style.transform='scale(1.05)';};card.onmouseout=function(){this.style.transform='scale(1)';};card.onclick=async function(){const ok=await equipRelic(user.uid,_equipCharName,_equipSlotIndex,name);if(ok){picker.style.display='none';await renderEquipSlots(_equipCharName,user.uid);await updateLobbyHUD();}};card.innerHTML='<img src="'+rd.img+'" style="width:48px;height:48px;object-fit:contain;border-radius:6px;">'+'<div style="font-size:.65rem;color:var(--text-secondary);margin-top:4px;">'+name+'</div>'+'<div style="font-size:.6rem;color:'+color+';">'+rd.tier+'</div>'+'<div style="font-size:.58rem;color:var(--text-muted);">×'+qty+'</div>';grid.appendChild(card);});if(!hasAny)grid.innerHTML='<div style="color:var(--text-muted);font-size:.8rem;text-align:center;grid-column:1/-1;padding:20px;">No tienes reliquias disponibles.</div>';}
+
+  let _sellRelicSelected=null;
+  async function loadDailyMarket(){const grid=document.getElementById('market-daily-grid');grid.innerHTML='<div style="color:var(--text-muted);font-size:.8rem;grid-column:1/-1;text-align:center;padding:20px;">Cargando...</div>';const market=await getDailyMarket();const user=firebase.auth().currentUser;if(!user)return;const tierColors={Raro:'#aaa',Especial:'#4fc3f7',Epico:'#c864ff',Legendario:'#ffd700'};grid.innerHTML='';if(market.relic){const rd=typeof RELICS_DATA!=='undefined'?RELICS_DATA[market.relic.name]:null;const color=tierColors[market.relic.tier]||'#aaa';var _mrn=market.relic.name.replace(/'/g,"\\'");grid.innerHTML+='<div style="background:rgba(255,255,255,0.04);border:2px solid '+color+';border-radius:var(--radius-md);padding:14px;text-align:center;"><img src="'+(rd?rd.img:'')+'" style="width:64px;height:64px;object-fit:contain;border-radius:8px;margin-bottom:8px;cursor:pointer;" onclick="showRelicTooltip(\''+_mrn+'\',typeof RELICS_DATA!==\'undefined\'?RELICS_DATA[\''+_mrn+'\']:null,\''+color+'\',this)" title="Ver descripción"><div style="font-size:.75rem;color:#fff;font-weight:700;margin-bottom:4px;">'+market.relic.name+'</div><div style="font-size:.68rem;color:'+color+';margin-bottom:8px;">'+market.relic.tier+'</div><div style="font-size:.75rem;color:var(--plasma-gold);margin-bottom:8px;">'+market.relic.price.toLocaleString()+' 🥇</div><button onclick="buyDailyItem(\''+user.uid+'\',\'relic\')" class="btn btn-gold btn-full btn-sm">Comprar</button></div>';}grid.innerHTML+='<div style="background:rgba(200,100,255,0.05);border:2px solid #c864ff;border-radius:var(--radius-md);padding:14px;text-align:center;"><img src="https://i.ibb.co/8D3s84Nw/image-53bcf67.png" style="width:64px;height:64px;object-fit:contain;border-radius:8px;margin-bottom:8px;" alt="Runa"><div style="font-size:.75rem;color:#fff;font-weight:700;margin-bottom:4px;">Runa de Ataque</div><div style="font-size:.68rem;color:#c864ff;margin-bottom:8px;">Especial</div><div style="font-size:.75rem;color:var(--plasma-gold);margin-bottom:8px;">50,000 🥇</div><button onclick="buyDailyItem(\''+user.uid+'\',\'rune\')" class="btn btn-violet btn-full btn-sm">Comprar</button></div>';const chests=[{id:'chest_rare',label:'Cofre Raro',price:'10,000',color:'#aaa',img:'https://i.ibb.co/m5XMkCRD/Gemini-Generated-Image-6hcw6f6hcw6f6hcw.png'},{id:'chest_special',label:'Cofre Especial',price:'25,000',color:'#4fc3f7',img:'https://i.ibb.co/fV9Q3kYf/Gemini-Generated-Image-37x6la37x6la37x6.png'},{id:'chest_epic',label:'Cofre Épico',price:'60,000',color:'#c864ff',img:'https://i.ibb.co/8D28wG42/Gemini-Generated-Image-vqlk4cvqlk4cvqlk.png'},{id:'chest_arcana',label:'Cofre Arcano',price:'1 🗝️',color:'#ffd700',img:'https://i.ibb.co/21Cqvp06/Gemini-Generated-Image-g76wcgg76wcgg76w.png'}];chests.forEach(function(ch){grid.innerHTML+='<div style="background:rgba(255,255,255,0.03);border:1px solid '+ch.color+';border-radius:var(--radius-md);padding:14px;text-align:center;"><img src="'+ch.img+'" style="width:72px;height:72px;object-fit:contain;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;" onerror="this.style.display=\'none\'"><div style="font-size:.75rem;color:#fff;font-weight:700;margin-bottom:4px;">'+ch.label+'</div><div style="font-size:.75rem;color:var(--plasma-gold);margin-bottom:8px;">'+ch.price+'</div><button onclick="buyDailyItem(\''+user.uid+'\',\''+ch.id+'\')" style="width:100%;padding:6px;background:rgba(255,255,255,0.05);border:1px solid '+ch.color+';color:'+ch.color+';border-radius:8px;font-size:.7rem;cursor:pointer;">Comprar</button></div>';});}
+  async function loadListings(){const list=document.getElementById('market-listings-list');list.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:20px;font-size:.8rem;">Cargando...</div>';const snap=await db.ref('market/listings').once('value');const data=snap.val()||{};const tierColors={Raro:'#aaa',Especial:'#4fc3f7',Epico:'#c864ff',Legendario:'#ffd700'};const user=firebase.auth().currentUser;const now=Date.now();list.innerHTML='';const entries=Object.entries(data).filter(function([id,l]){return l.expiresAt>now;}).sort(function(a,b){return a[1].listedAt-b[1].listedAt;});if(entries.length===0){list.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:24px;font-size:.8rem;">No hay publicaciones activas.</div>';return;}entries.forEach(function([id,listing]){const rd=typeof RELICS_DATA!=='undefined'?RELICS_DATA[listing.relic]:null;const color=tierColors[listing.tier]||'#aaa';const isMine=user&&listing.sellerId===user.uid;const el7=document.createElement('div');el7.style.cssText='background:rgba(255,255,255,0.04);border:1px solid '+color+';border-radius:var(--radius-md);padding:12px;display:flex;align-items:center;gap:12px;';const expiresIn=Math.max(0,Math.floor((listing.expiresAt-now)/3600000));el7.innerHTML='<img src="'+(rd?rd.img:'')+'" style="width:48px;height:48px;object-fit:contain;border-radius:6px;">'+'<div style="flex:1;"><div style="font-size:.82rem;color:#fff;font-weight:700;">'+listing.relic+'</div><div style="font-size:.68rem;color:'+color+';">'+listing.tier+'</div><div style="font-size:.65rem;color:var(--text-muted);">Por: '+(listing.sellerName||'?')+' · Expira en: '+expiresIn+'h</div></div>'+'<div style="text-align:right;"><div style="font-size:.85rem;color:var(--plasma-gold);font-weight:700;margin-bottom:6px;">'+listing.price.toLocaleString()+' 🥇</div>'+(isMine?'<div style="font-size:.65rem;color:var(--text-muted);">Tu publicación</div>':'<button data-uid="'+_escHtmlInv(user?user.uid:'')+'" data-id="'+_escHtmlInv(id)+'" onclick="var b=this;buyListedRelic(b.dataset.uid,b.dataset.id).then(loadListings)" style="padding:6px 12px;background:rgba(0,200,100,0.2);border:1px solid #00cc66;color:#00cc66;border-radius:8px;font-size:.7rem;cursor:pointer;">Comprar</button>')+'</div>';list.appendChild(el7);});}
+  async function loadSellTab(){_sellRelicSelected=null;const sellForm=document.getElementById('market-sell-form');if(sellForm)sellForm.style.display='none';const grid=document.getElementById('market-sell-relics');grid.innerHTML='<div style="color:var(--text-muted);font-size:.75rem;text-align:center;padding:12px;">Cargando...</div>';const user=firebase.auth().currentUser;if(!user)return;const today=new Date().toISOString().split('T')[0];const lastListSnap=await db.ref('users/'+user.uid+'/last_listing_date').once('value');const alreadyListed=lastListSnap.val()===today;const activeSnap=await db.ref('market/listings').orderByChild('sellerId').equalTo(user.uid).once('value');const activeData=activeSnap.val()||{};const activeListings=Object.entries(activeData);let headerHTML='';if(activeListings.length>0){const al=activeListings[0][1];const timeLeft=Math.max(0,Math.round((al.expiresAt-Date.now())/3600000));headerHTML='<div class="card card-glow-green" style="margin-bottom:14px;padding:10px 14px;"><div style="font-size:.72rem;color:var(--plasma-green);font-weight:700;margin-bottom:4px;">📦 TU PUBLICACIÓN ACTIVA</div><div style="font-size:.75rem;color:var(--text-secondary);">'+al.relic+' · '+(al.price||0).toLocaleString()+' 🥇</div><div style="font-size:.65rem;color:var(--text-muted);margin-top:3px;">⏱️ Expira en ~'+timeLeft+'h</div></div>';}else if(alreadyListed){headerHTML='<div class="card" style="margin-bottom:14px;font-size:.72rem;color:var(--plasma-gold);">⏳ Ya publicaste un artículo hoy. Podrás publicar otro mañana.</div>';}const data=await getPlayerData(user.uid);const relics=(data.inventory&&data.inventory.relics)||{};const tierColors={Raro:'#aaa',Especial:'#4fc3f7',Epico:'#c864ff',Legendario:'#ffd700'};let gridHTML='';Object.entries(relics).forEach(function([name,qty]){if(!qty||qty<=0)return;const rd=typeof RELICS_DATA!=='undefined'?RELICS_DATA[name]:null;if(!rd)return;const color=tierColors[rd.tier]||'#aaa';gridHTML+='<div class="_sellRelicCard" data-name="'+name.replace(/"/g,'&quot;')+'" data-tier="'+rd.tier+'" data-color="'+color+'" onclick="window.loadSellSelectRelic(this,this.dataset.name,this.dataset.tier,this.dataset.color)" style="background:rgba(255,255,255,0.04);border:1px solid '+color+';border-radius:var(--radius-md);padding:10px;text-align:center;cursor:pointer;transition:var(--transition);" onmouseover="this.style.boxShadow=\'0 0 10px '+color+'55\'" onmouseout="this.style.boxShadow=\'none\'"><img src="'+rd.img+'" style="width:48px;height:48px;object-fit:contain;border-radius:6px;" onerror="this.style.display=\'none\'"><div style="font-size:.65rem;color:var(--text-secondary);margin-top:4px;line-height:1.2;">'+name+'</div><div style="font-size:.6rem;color:'+color+';">×'+qty+' · '+rd.tier+'</div></div>';});if(!gridHTML)gridHTML='<div style="color:var(--text-muted);font-size:.8rem;text-align:center;padding:16px;grid-column:1/-1;">No tienes reliquias para vender.</div>';grid.innerHTML=headerHTML+'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;">'+gridHTML+'</div>';if(alreadyListed&&sellForm)sellForm.style.display='none';}
+  window.loadSellSelectRelic=function(cardEl,name,tier,color){const today=new Date().toISOString().split('T')[0];db.ref('users/'+firebase.auth().currentUser.uid+'/last_listing_date').once('value').then(function(s){if(s.val()===today){alert('Ya publicaste un artículo hoy.');return;}document.querySelectorAll('._sellRelicCard').forEach(function(c){c.style.borderWidth='1px';});if(cardEl)cardEl.style.borderWidth='3px';_sellRelicSelected=name;document.getElementById('market-sell-selected-name').textContent='💎 '+name+' ('+tier+')';const form=document.getElementById('market-sell-form');if(form){form.style.display='block';const typeEl=document.getElementById('market-sell-type');if(typeEl)typeEl.value='public';document.getElementById('market-sell-price-row').style.display='block';}});};
+  document.addEventListener('DOMContentLoaded',function(){const sellType=document.getElementById('market-sell-type');if(sellType)sellType.addEventListener('change',function(){document.getElementById('market-sell-price-row').style.display=this.value==='public'?'block':'none';});});
+  async function confirmSellRelic(){if(!_sellRelicSelected)return;const user=firebase.auth().currentUser;if(!user)return;const type=document.getElementById('market-sell-type').value;if(type==='quick'){await quickSellRelic(user.uid,_sellRelicSelected);loadSellTab();}else{const price=parseInt(document.getElementById('market-sell-price-input').value);if(!price||price<1){alert('Ingresa un precio válido.');return;}await listRelicForSale(user.uid,_sellRelicSelected,price);loadSellTab();}}
+
+  // Relic tooltip
+  function showRelicTooltip(name,rd,color,anchorEl){var prev=document.getElementById('relicTooltipPopup');if(prev){if(prev._anchorEl===anchorEl){prev.remove();return;}prev.remove();}if(!rd)return;var tierColors={Raro:'#aaa',Especial:'#4fc3f7',Epico:'#c864ff',Legendario:'#ffd700'};var tc=tierColors[rd.tier]||color||'#aaa';var popup=document.createElement('div');popup.id='relicTooltipPopup';popup._anchorEl=anchorEl;popup.style.cssText='position:fixed;z-index:99999;background:linear-gradient(135deg,rgba(4,6,15,0.98),rgba(13,20,40,0.98));border:2px solid '+tc+';border-radius:var(--radius-lg);padding:16px 18px;min-width:220px;max-width:300px;box-shadow:0 0 32px '+tc+'44,0 8px 24px rgba(0,0,0,0.8);';if(!document.getElementById('relicTooltipCSS')){var s=document.createElement('style');s.id='relicTooltipCSS';s.textContent='@keyframes relicTipIn{from{opacity:0;transform:scale(.92) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}';document.head.appendChild(s);}popup.style.animation='relicTipIn .22s ease';popup.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><img src="'+(rd.img||'')+'" style="width:44px;height:44px;object-fit:contain;border-radius:7px;border:1px solid '+tc+';" onerror="this.style.display=\'none\'"><div><div style="font-family:Chakra Petch,sans-serif;font-size:.82rem;color:'+tc+';font-weight:700;">'+name+'</div><div style="font-size:.65rem;color:var(--text-muted);margin-top:1px;">'+(rd.slot||'')+' · '+(rd.tier||'')+'</div></div></div><div style="font-size:.76rem;color:var(--text-secondary);line-height:1.5;border-top:1px solid rgba(255,255,255,0.07);padding-top:10px;">'+(rd.desc||'Sin descripción.')+'</div><button onclick="document.getElementById(\'relicTooltipPopup\').remove()" style="margin-top:12px;width:100%;padding:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);border-radius:7px;font-size:.7rem;cursor:pointer;">✕ Cerrar</button>';document.body.appendChild(popup);var rect=anchorEl.getBoundingClientRect();var pw=300;var left=Math.max(8,Math.min(rect.left+rect.width/2-pw/2,window.innerWidth-pw-8));var top=rect.bottom+8;if(top+200>window.innerHeight)top=Math.max(8,rect.top-220);popup.style.left=left+'px';popup.style.top=top+'px';setTimeout(function(){document.addEventListener('click',function _c(e){if(!popup.contains(e.target)&&e.target!==anchorEl){popup.remove();document.removeEventListener('click',_c);}});},100);}
+</script>
+
+</body>
+</html>

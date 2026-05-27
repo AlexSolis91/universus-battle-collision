@@ -1,0 +1,771 @@
+// ── HELPER: triggerIzanamiPartB ──
+        // Called by applyFlatBurn, applyPoison, applyConfusion, and applyDebuff
+        // when a trigger debuff (Quemadura/Veneno/Posesion/Confusion) hits any character.
+        // If Itachi is on that character's team, he cleanses up to 2 debuffs + 2 charges each.
+        function triggerIzanamiPartB(targetName) {
+            // Itachi Izanami Parte B: al recibir debuff un aliado, limpia 1 debuff de un aliado ALEATORIO + 2 cargas
+            // Flag por turno para evitar que un AOE limpie múltiples debuffs
+            if (passiveExecuting) return;
+            if (gameState._izanamiUsedThisTurn) return;
+            const target = gameState.characters[targetName];
+            if (!target || target.isDead || target.hp <= 0) return;
+            const _izAllyTeam = target.team;
+            for (const _izn in gameState.characters) {
+                const _izc = gameState.characters[_izn];
+                if (!_izc || _izc.isDead || _izc.hp <= 0 || _izc.team !== _izAllyTeam) continue;
+                if (!_izc.passive || _izc.passive.name !== 'Izanami') continue;
+                passiveExecuting = true;
+                // Recoger aliados con al menos 1 debuff
+                const _alliesWithDebuff = Object.keys(gameState.characters).filter(function(n) {
+                    const c = gameState.characters[n];
+                    return c && !c.isDead && c.hp > 0 && c.team === _izAllyTeam &&
+                        (c.statusEffects || []).some(function(e) { return e && e.type === 'debuff' && !e.permanent; });
+                });
+                if (_alliesWithDebuff.length > 0) {
+                    gameState._izanamiUsedThisTurn = true; // Un solo disparo por turno
+                    // Elegir aliado aleatorio con debuff
+                    const _randAlly = _alliesWithDebuff[Math.floor(Math.random() * _alliesWithDebuff.length)];
+                    const _alc = gameState.characters[_randAlly];
+                    const _dbs = (_alc.statusEffects || []).filter(function(e) { return e && e.type === 'debuff' && !e.permanent; });
+                    if (_dbs.length > 0) {
+                        const _rem = _dbs[Math.floor(Math.random() * _dbs.length)];
+                        _alc.statusEffects = (_alc.statusEffects || []).filter(function(e) { return e !== _rem; });
+                        addLog('Izanami: ' + (_rem.name||'Debuff') + ' limpiado de ' + _randAlly + ' (aliado aleatorio)', 'buff');
+                        if (typeof triggerRinneganCleanse === 'function') triggerRinneganCleanse(_randAlly, 1);
+                        _izc.charges = Math.min(20, (_izc.charges || 0) + 2);
+                        addLog('Izanami: ' + _izn + ' genera 2 cargas', 'buff');
+                    }
+                }
+                passiveExecuting = false;
+                break;
+            }
+        }
+
+
+        // ── PASIVA RINNEGAN (Madara): genera 3 cargas cuando un debuff es limpiado/disipado ──
+        function triggerRinneganCleanse(targetName, count) {
+            if (!count || count <= 0) return;
+            const c = gameState.characters[targetName];
+            if (!c || c.isDead || !c.passive || c.passive.name !== 'Rinnegan') return;
+            const gained = count * 3;
+            c.charges = Math.min(20, (c.charges || 0) + gained);
+            addLog('👁️ Rinnegan: ' + targetName + ' genera ' + gained + ' cargas (' + count + ' debuff' + (count>1?'s':'') + ' disipado' + (count>1?'s':'') + ')', 'buff');
+        }
+function triggerMaboroshi(targetTeam, debuffName) {
+            if (!debuffName) return;
+            const norm = (debuffName || '').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+            if (norm !== 'posesion' && norm !== 'mega posesion') return;
+            // Find any character with Maboroshi no Shinkiro passive on the OPPOSING team
+            for (const sagaName in gameState.characters) {
+                const saga = gameState.characters[sagaName];
+                if (!saga || saga.isDead || saga.hp <= 0) continue;
+                if (saga.team === targetTeam) continue; // Must be on the ATTACKER's team
+                if (!saga.passive || saga.passive.name !== 'Maboroshi no Shinkiro') continue;
+                saga.charges = Math.min(20, (saga.charges || 0) + 3);
+                addLog('🌌 Maboroshi no Shinkiro: ' + sagaName + ' genera 3 cargas (' + debuffName + ' aplicado a enemigo)', 'buff');
+                break;
+            }
+        }        // ==================== APLICADORES DE DEBUFFS ====================
+
+        // Debuffs that cannot stack on the same target (must expire first)
+        const NON_STACKABLE_DEBUFFS = ['aturdimiento', 'mega aturdimiento', 'congelacion', 'mega congelacion', 'posesion', 'mega posesion', 'silenciar', 'concentracion', 'esquivar', 'esquiva area', 'contraataque', 'espinas', 'armadura', 'escudo sagrado', 'proteccion sagrada', 'anticipacion'];
+
+        
+        // ═══════════════════════════════════════════════════════════
+        // NUEVOS BUFFS/DEBUFFS - HELPERS
+        // ═══════════════════════════════════════════════════════════
+
+        function applyArmadura(targetName, duration) {
+            applyBuff(targetName, { name: 'Armadura', type: 'buff', duration, emoji: '🛡️' });
+            addLog(`🛡️ ${targetName} gana Buff Armadura (${duration} turno${duration>1?'s':''})`, 'buff');
+        }
+
+        function applyConcentracion(targetName, duration) {
+            if (hasStatusEffect(targetName, 'Concentracion')) {
+                addLog(`🎯 ${targetName} ya tiene Concentración activo`, 'info'); return;
+            }
+            applyBuff(targetName, { name: 'Concentracion', type: 'buff', duration, emoji: '🎯' });
+            addLog(`🎯 ${targetName} gana Buff Concentración (${duration} turno${duration>1?'s':''})`, 'buff');
+        }
+
+        function applyAgotamiento(targetName, duration) {
+            applyDebuff(targetName, { name: 'Agotamiento', type: 'debuff', duration, emoji: '😩' });
+            addLog(`😩 ${targetName} sufre Agotamiento (${duration} turno${duration>1?'s':''})`, 'damage');
+        }
+
+        function applyMegaPosesion(targetName, duration) {
+            if (hasStatusEffect(targetName, 'Mega Posesion')) {
+                addLog(`👁️ ${targetName} ya tiene Mega Posesión activo`, 'info'); return;
+            }
+            const _mpTgt = gameState.characters[targetName];
+            if (_mpTgt && _mpTgt.passive && _mpTgt.passive.name === 'Mente Brillante') {
+                addLog('🪓 Mente Brillante: Ivar es inmune a Mega Posesión', 'buff'); return;
+            }
+            applyDebuff(targetName, { name: 'Mega Posesion', type: 'debuff', duration, emoji: '👁️' });
+            addLog(`👁️ ${targetName} sufre Mega Posesión (${duration} turno${duration>1?'s':''})`, 'damage');
+        }
+
+        function applySilenciar(targetName, duration) {
+            if (hasStatusEffect(targetName, 'Silenciar')) {
+                addLog(`🔇 ${targetName} ya tiene Silenciar activo`, 'info'); return;
+            }
+            // Determinar categoría silenciada aleatoriamente
+            const cats = ['basic', 'special', 'over'];
+            const cat = cats[Math.floor(Math.random() * cats.length)];
+            applyDebuff(targetName, { name: 'Silenciar', type: 'debuff', duration, silencedCategory: cat, emoji: '🔇' });
+            addLog(`🔇 ${targetName} es Silenciado — categoría ${cat} bloqueada por ${duration} turno${duration>1?'s':''}`, 'damage');
+            if (typeof registerCC === 'function' && gameState.selectedCharacter) registerCC(gameState.selectedCharacter);
+        }
+
+        function triggerAntipacion(extraTurnCharName) {
+            // Cuando alguien gana turno extra, aliados ENEMIGOS con Anticipación golpean 3 veces
+            const extraChar = gameState.characters[extraTurnCharName];
+            if (!extraChar) return;
+            const enemyTeam = extraChar.team === 'team1' ? 'team2' : 'team1';
+            for (const name in gameState.characters) {
+                const c = gameState.characters[name];
+                if (!c || c.isDead || c.hp <= 0 || c.team !== enemyTeam) continue;
+                if (!hasStatusEffect(name, 'Anticipacion')) continue;
+                addLog(`⚡ Anticipación: ${name} reacciona al turno extra con 3 ataques básicos sobre ${extraTurnCharName}!`, 'buff');
+                const basic = c.abilities && c.abilities[0];
+                if (!basic) continue;
+                for (let i = 0; i < 3; i++) {
+                    passiveExecuting = true;
+                    const savedSelected = gameState.selectedCharacter;
+                    const savedAbility = gameState.selectedAbility;
+                    gameState.selectedCharacter = name;
+                    gameState.selectedAbility = basic;
+                    gameState.adjustedCost = 0;
+                    if (basic.damage > 0) {
+                        applyDamageWithShield(extraTurnCharName, basic.damage, name);
+                        addLog(`  ⚔️ Anticipación golpe ${i+1}: ${name} → ${extraTurnCharName} (${basic.damage} daño)`, 'damage');
+                    }
+                    gameState.selectedCharacter = savedSelected;
+                    gameState.selectedAbility = savedAbility;
+                    passiveExecuting = false;
+                }
+            }
+        }
+
+
+        function applyBuff(targetName, effectObj) {
+            const target = gameState.characters[targetName];
+            if (!target || !target.statusEffects) return;
+            // No stackeable si ya existe (salvo stackeables explícitos)
+            const stackable = ['furia', 'frenesi', 'regeneracion', 'escudo', 'celeridad', 'armadura', 'anticipacion', 'sangrado', 'debilitar', 'confusion', 'miedo', 'agotamiento', 'veneno', 'quemadura', 'quemadura solar'];
+            const effNorm = normAccent(effectObj.name || '');
+            if (!stackable.includes(effNorm)) {
+                if (target.statusEffects.some(e => e && normAccent(e.name || '') === effNorm)) {
+                    addLog(`✨ ${targetName} ya tiene ${effectObj.name} activo`, 'info');
+                    return;
+                }
+            }
+            target.statusEffects.push(effectObj);
+            // Animación buff en el portador
+            if (typeof _animCard === 'function' && !effectObj.passiveHidden) {
+                _animCard(targetName, 'anim-charge', 550);
+            }
+            // MVP: registrar buff aplicado (buffs visibles en aliados aplicados activamente)
+            if (!effectObj.passiveHidden && gameState.selectedCharacter) {
+                const _caster = gameState.characters[gameState.selectedCharacter];
+                const _tgt = gameState.characters[targetName];
+                // Solo registrar si el caster y el target son aliados Y hay una habilidad activa seleccionada
+                if (_caster && _tgt && _caster.team === _tgt.team &&
+                    gameState.selectedAbility && typeof registerBuff === 'function') {
+                    registerBuff(gameState.selectedCharacter);
+                }
+            }
+            // MONARCA DE LA DESTRUCCION: 2 daño si se aplica Buff a un personaje que es enemigo de Antares
+            // Solo disparar si NO estamos en ejecución pasiva (evita doble trigger)
+            if (!passiveExecuting && typeof triggerMonarcaDestruccion === 'function') {
+                triggerMonarcaDestruccion(targetName);
+            }
+
+            // EMPERADOR DE LA GALAXIA (Palpatine): buff aplicado a enemigo → aliado aleatorio +2 cargas
+            if (!passiveExecuting) {
+                const _epTgt = gameState.characters[targetName];
+                const _epTgtTeam = _epTgt ? _epTgt.team : null;
+                if (_epTgtTeam) {
+                    const _epAlly = _epTgtTeam === 'team1' ? 'team2' : 'team1';
+                    for (const _pN in gameState.characters) {
+                        const _pC = gameState.characters[_pN];
+                        if (!_pC || _pC.isDead || !_pC.passive) continue;
+                        if (_pC.passive.name !== 'Emperador de la Galaxia') continue;
+                        if (_pC.team !== _epAlly) continue;
+                        // Elegir un aliado aleatorio de Palpatine
+                        const _pallies = Object.keys(gameState.characters).filter(function(n){
+                            const _cc = gameState.characters[n];
+                            return _cc && _cc.team === _epAlly && !_cc.isDead && _cc.hp > 0;
+                        });
+                        if (_pallies.length > 0) {
+                            const _rAlly = _pallies[Math.floor(Math.random() * _pallies.length)];
+                            gameState.characters[_rAlly].charges = Math.min(20, (gameState.characters[_rAlly].charges||0) + 2);
+                            addLog('⚡ Emperador de la Galaxia: ' + _rAlly + ' +2 cargas (enemigo recibió buff)', 'buff');
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+
+        function isImmuneToDebuff(targetName) {
+            // Saitama: total debuff immunity
+            if ((targetName === 'Saitama' || targetName === 'Saitama v2')) return true;
+            // Superman Forma Prime: debuff immunity
+            const _spChar = gameState.characters[targetName];
+            if (_spChar && _spChar.supermanPrimeMode) return true;
+
+            // Proteccion Sagrada: immune to new debuffs
+            if (hasStatusEffect(targetName, 'Proteccion Sagrada') || hasStatusEffect(targetName, 'Protección Sagrada')) return true;
+            // LIMBO (Madara Uchiha): Divinidad = inmune a debuffs en Modo Rikudō
+            const limboChar = gameState.characters[targetName];
+            if (limboChar && limboChar.passive && limboChar.passive.name === 'Limbo' && limboChar.rikudoMode) return true;
+            return false;
+        }
+        function isImmuneToBurn(targetName) {
+            // Daenerys: immune to Quemadura and Quemadura Solar
+            if ((targetName === 'Daenerys Targaryen' || targetName === 'Daenerys Targaryen v2')) return true;
+            if ((targetName === 'Saitama' || targetName === 'Saitama v2')) return true;
+            if (hasStatusEffect(targetName, 'Proteccion Sagrada') || hasStatusEffect(targetName, 'Protección Sagrada')) return true;
+            { const _aC = gameState.characters[targetName];
+              if (_aC && _aC.passive && _aC.passive.name === 'Monarca de la Destruccion') return true; }
+            return false;
+        }
+function applyDebuff(targetName, effectObj) {
+            const target = gameState.characters[targetName];
+            if (!target || !target.statusEffects) return;
+            // BUFF REFLEJAR: el portador es inmune a nuevos debuffs mientras Reflejar esté activo
+            if (hasStatusEffect(targetName, 'Reflejar')) {
+                addLog('🪞 Reflejar: ' + targetName + ' es inmune al debuff (Reflejar activo)', 'buff');
+                return;
+            }
+            // ESQUIVA ÁREA: inmune a TODOS los debuffs y efectos AOE de enemigos
+            // También bloquea debuffs de movimientos NO-AOE si el objetivo tiene Esquiva Area activa
+            if (gameState.selectedAbility && gameState.selectedCharacter) {
+                const _attacker = gameState.characters[gameState.selectedCharacter];
+                const _isEnemyAttack = _attacker && _attacker.team !== target.team;
+                const _isAOEOrAll = gameState.selectedAbility.target === 'aoe' ||
+                    gameState.selectedAbility.target === 'team' ||
+                    gameState.selectedAbility.target === 'multi';
+                if (_isEnemyAttack) {
+                    // Esquiva Área bloquea debuffs de ataques AOE/multi Y debuffs de cualquier ataque
+                    if (_isAOEOrAll && (checkAsprosAOEImmunity(targetName, true) || checkMinatoAOEImmunity(targetName))) {
+                        addLog('💨 Esquiva Area: ' + targetName + ' esquiva el debuff AOE', 'buff');
+                        return;
+                    }
+                }
+            }
+            // MEGA PROVOCACIÓN: solo el portador puede recibir debuffs AOE
+            if (gameState.selectedAbility && (gameState.selectedAbility.target === 'aoe' || gameState.selectedAbility.target === 'team')) {
+                const _attacker = gameState.characters[gameState.selectedCharacter];
+                if (_attacker && _attacker.team !== target.team) {
+                    // MEGA PROVOCACIÓN: solo el portador de MegaProv puede recibir debuffs/buffs AOE del enemigo
+                    const _mpDebData = (typeof checkKamishMegaProvocation === 'function')
+                        ? checkKamishMegaProvocation(target.team)
+                        : null;
+                    if (_mpDebData) {
+                        // Determine if targetName is the MegaProv holder
+                        let _isHolder = false;
+                        if (_mpDebData.isCharacter && targetName === _mpDebData.characterName) _isHolder = true;
+                        // For summon holders: the debuff would go to the summon (handled by applyDebuff on summon)
+                        // For character holders: only they can receive the debuff
+                        if (!_isHolder && _mpDebData.isCharacter) {
+                            addLog('🎯 Mega Provocación: ' + targetName + ' es inmune al debuff/buff AOE (solo ' + _mpDebData.characterName + ' puede ser afectado)', 'buff');
+                            return;
+                        }
+                    }
+                }
+            }
+            // ABU EL-HOL SPHINX: Ozymandias inmune a debuffs cuando está activa
+            if (effectObj && effectObj.type === 'debuff' && gameState && gameState.summons) {
+                const _hasSphinx = Object.values(gameState.summons).some(function(s) {
+                    return s && (s.name === 'Abu el-Hol Sphinx' || s.name === 'Sphinx Wehem-Mesut') &&
+                        s.summoner === targetName && s.hp > 0;
+                });
+                if (_hasSphinx) {
+                    addLog('🦁 Abu el-Hol Sphinx: ' + targetName + ' es inmune a debuffs', 'buff');
+                    return;
+                }
+            }
+            // Proteccion Sagrada bloquea todos los debuffs
+            if (hasStatusEffect(targetName, 'Proteccion Sagrada')) {
+                addLog(`🛡️ ${targetName} es inmune a debuffs (Protección Sagrada)`, 'buff');
+                return;
+            }
+            // IMMUNIDADES POR PERSONAJE (pasivas)
+            const targetChar = gameState.characters[targetName];
+            if (targetChar) {
+                // Saitama: inmune a todos los debuffs
+                if ((targetName === 'Saitama' || targetName === 'Saitama v2') && effectObj.type === 'debuff') {
+                    addLog(`🦸 Saitama es inmune a ${effectObj.name} (Espíritu del Héroe)`, 'buff');
+                    return;
+                }
+                // DIVINIDAD: 50% limpiar debuff entrante, +2 cargas por limpiado
+                if (effectObj.type === 'debuff' && hasStatusEffect(targetName, 'Divinidad') && Math.random() < 0.5) {
+                    targetChar.charges = Math.min(20, (targetChar.charges || 0) + 2);
+                    addLog('✨ Divinidad: ' + targetName + ' limpia ' + (effectObj.name || 'debuff') + ' y gana 2 cargas', 'buff');
+                    return;
+                }
+                const effN = normAccent(effectObj.name || '');
+                // Inmune a Miedo
+                if (targetChar.immuneToMiedo && (effN === 'miedo')) {
+                    addLog(`🛡️ ${targetName} es inmune a ${effectObj.name}`, 'buff');
+                    return;
+                }
+                // Inmune a Confusión
+                if (targetChar.immuneToConfusion && (effN === 'confusion')) {
+                    addLog(`🛡️ ${targetName} es inmune a ${effectObj.name}`, 'buff');
+                    return;
+                }
+                // Inmune a Posesión y Mega Posesión
+                if (targetChar.immuneToPosesion && (effN === 'posesion' || effN === 'mega posesion')) {
+                    addLog(`🛡️ ${targetName} es inmune a ${effectObj.name}`, 'buff');
+                    return;
+                }
+                // Inmune a Congelación
+                if (targetChar.immuneToCongelacion && (effN === 'congelacion' || effN === 'mega congelacion')) {
+                    addLog(`❄️ Aura de Hielo: ${targetName} es inmune a ${effectObj.name}`, 'buff');
+                    return;
+                }
+            }
+            // NON-STACKABLE debuffs: block if target already has this debuff active
+            const effNorm = normAccent(effectObj.name || '');
+            if (NON_STACKABLE_DEBUFFS.includes(effNorm)) {
+                const alreadyHas = target.statusEffects.some(e => e && normAccent(e.name || '') === effNorm);
+                if (alreadyHas) {
+                    addLog('⚠️ ' + targetName + ' ya tiene ' + effectObj.name + ' activo — no se puede aplicar de nuevo', 'info');
+                    return;
+                }
+            }
+            target.statusEffects.push(effectObj);
+            // MVP: registrar debuff aplicado sobre enemigo (solo con habilidad activa)
+            if (gameState.selectedCharacter && gameState.selectedAbility) {
+                const _caster = gameState.characters[gameState.selectedCharacter];
+                const _tgt = gameState.characters[targetName];
+                if (_caster && _tgt && _caster.team !== _tgt.team && typeof registerDebuff === 'function') {
+                    registerDebuff(gameState.selectedCharacter);
+                }
+            }
+            // Animación debuff en el portador
+            if (typeof _animCard === 'function') {
+                _animCard(targetName, 'anim-debuff', 500);
+            }
+            // PASIVA MABOROSHI: Saga gana 1 carga al aplicar debuff en enemigo
+            triggerMaboroshi(target.team, effectObj.name);
+            // ARCHIMAGA DEL KIRIN TOR (Jaina): aplica Congelacion al enemigo que recibe debuff
+            if (gameState.selectedCharacter && gameState.selectedCharacter !== targetName) {
+                const _jainaAtk = gameState.characters[gameState.selectedCharacter];
+                if (_jainaAtk && target && _jainaAtk.team !== target.team &&
+                    _jainaAtk.passive && _jainaAtk.passive.name === 'Archimaga del Kirin Tor') {
+                    const _dEffN = normAccent(effectObj.name||'');
+                    if (_dEffN !== 'congelacion' && _dEffN !== 'mega congelacion') {
+                        if (typeof applyFreeze === 'function') applyFreeze(targetName, 1);
+                    }
+                }
+            }
+            // LUNA SUPERIOR DOS (Douma): cura al aplicar Congelacion/Megacongelacion
+            {
+                const _lsdEffN = normAccent(effectObj.name||'');
+                if (_lsdEffN === 'congelacion' || _lsdEffN === 'mega congelacion') {
+                    if (typeof triggerLunaSuperiorDos === 'function') triggerLunaSuperiorDos(targetName, _lsdEffN === 'mega congelacion');
+                }
+            }
+            // PASIVA PRÍNCIPE DE LOS SAYAJINS (Vegeta): 50% debuff miss chance
+            {
+                const _vegDebTarget = gameState.characters[targetName];
+                if (_vegDebTarget && !_vegDebTarget.isDead && _vegDebTarget.hp > 0 &&
+                    _vegDebTarget.passive && _vegDebTarget.passive.name === 'Príncipe de los Sayajins' &&
+                    effectObj.type === 'debuff') {
+                    if (Math.random() < 0.50) {
+                        addLog('👑 Príncipe de los Sayajins: ' + targetName + ' evade el debuff ' + effectObj.name + ' (50%)', 'buff');
+                        return; // debuff blocked
+                    }
+                }
+            }
+
+            // CÉLULAS DE HASHIRAMA (Madara): 50% de limpiar debuff al recibirlo (100% en Rikudō)
+            {
+                const _hashTarget = gameState.characters[targetName];
+                if (_hashTarget && !_hashTarget.isDead && _hashTarget.hp > 0 &&
+                    _hashTarget.passive && _hashTarget.passive.name === 'Células de Hashirama' &&
+                    effectObj.type === 'debuff') {
+                    const _hashChance = _hashTarget.rikudoMode ? 1.00 : 0.50;
+                    if (Math.random() < _hashChance) {
+                        _hashTarget.statusEffects = (_hashTarget.statusEffects || []).filter(e => e !== effectObj);
+                        addLog('🌿 Células de Hashirama: ' + targetName + ' limpia ' + effectObj.name + (_hashTarget.rikudoMode ? ' (100% Rikudō)' : ' (50%)'), 'buff');
+                        return;
+                    }
+                }
+            }
+
+            // PASIVA NEGOCIACIONES HOSTILES (Padme): aliado recibe debuff → Padme +1 carga
+            {
+                const padme = gameState.characters['Padme Amidala'] ||
+                    Object.values(gameState.characters).find(c => c && (c.passive && c.passive.name === 'Negociaciones Hostiles') && c.team === target.team && !c.isDead && c.hp > 0);
+                if (padme && !padme.isDead && padme.hp > 0 && effectObj.type === 'debuff') {
+                    // Check if target is an ally of Padme (same team)
+                    if (target.team === padme.team) {
+                        padme.charges = Math.min(20, (padme.charges || 0) + 1);
+                        addLog('🌹 Negociaciones Hostiles: Padmé gana 1 carga (' + padme.charges + ')', 'buff');
+                    }
+                }
+            }
+
+            // ── PASIVA DIOS DE LA GUERRA (Kratos): 50% limpia debuff + 2 buffs aleatorios ──
+            if (!passiveExecuting && effectObj && effectObj.type === 'debuff') {
+                const _kratosChar = gameState.characters[targetName];
+                if (_kratosChar && !_kratosChar.isDead && _kratosChar.hp > 0 &&
+                    _kratosChar.passive && _kratosChar.passive.name === 'Dios de la Guerra') {
+                    if (Math.random() < 0.50) {
+                        // Remove the debuff that was just applied
+                        _kratosChar.statusEffects = (_kratosChar.statusEffects || []).filter(function(e){ return e !== effectObj; });
+                        addLog('⚔️ Dios de la Guerra: ' + targetName + ' limpia ' + (effectObj.name||'debuff'), 'buff');
+                        // Apply 2 random buffs
+                        const KRATOS_BUFFS = [
+                            { name: 'Furia', type: 'buff', duration: 2, emoji: '🔥' },
+                            { name: 'Frenesi', type: 'buff', duration: 2, emoji: '⚡' },
+                            { name: 'Armadura', type: 'buff', duration: 2, emoji: '🛡️' },
+                            { name: 'Concentracion', type: 'buff', duration: 2, emoji: '🎯' },
+                            { name: 'Contraataque', type: 'buff', duration: 2, emoji: '⚔️' },
+                            { name: 'Celeridad', type: 'buff', duration: 2, emoji: '💨', speedBonus: 5 }
+                        ];
+                        var _shuffled = KRATOS_BUFFS.slice().sort(function(){ return Math.random()-0.5; });
+                        for (var _ki = 0; _ki < 2; _ki++) {
+                            var _kb = Object.assign({}, _shuffled[_ki]);
+                            _kratosChar.statusEffects.push(_kb);
+                            if (_kb.speedBonus) _kratosChar.speed = (_kratosChar.speed||88) + _kb.speedBonus;
+                            addLog('⚔️ Dios de la Guerra: ' + targetName + ' gana buff ' + _kb.name, 'buff');
+                        }
+                        return; // debuff removed, no further processing
+                    }
+                }
+            }
+
+            // ── PASIVA IZANAMI PARTE B: via triggerIzanamiPartB helper ──
+            if (effectObj && effectObj.type === 'debuff') {
+                const _izTriggers2 = ['posesion', 'posesión', 'veneno', 'quemadura', 'quemaduras', 'confusion', 'confusión'];
+                if (_izTriggers2.some(function(t){ return normAccent(effectObj.name||'').toLowerCase().includes(t); })) {
+                    triggerIzanamiPartB(targetName);
+                }
+            }
+        }
+
+        function applyStun(targetName, duration = 1) {
+
+            if (isImmuneToDebuff(targetName)) { addLog('🛡️ ' + targetName + ' es inmune a debuffs', 'buff'); return; }            const name = duration >= 2 ? 'Mega Aturdimiento' : 'Aturdimiento';
+            const emoji = duration >= 2 ? '💫' : '⭐';
+            applyDebuff(targetName, { name, type: 'debuff', duration, emoji });
+            addLog(`${emoji} ${targetName} queda aturdido por ${duration} turno${duration > 1 ? 's' : ''}`, 'damage');
+            if (typeof registerCC === 'function' && gameState.selectedCharacter) registerCC(gameState.selectedCharacter);
+        }
+
+        function applyBleed(targetName, duration) {
+
+            if (isImmuneToDebuff(targetName)) { addLog('🛡️ ' + targetName + ' es inmune a debuffs', 'buff'); return; }
+            const _bleedTgt = gameState.characters[targetName];
+            if (_bleedTgt && _bleedTgt.passive && _bleedTgt.passive.name === 'Invierno Eterno') { addLog('☠️ Invierno Eterno: Rey de la Noche es inmune a Sangrado', 'buff'); return; }
+            applyDebuff(targetName, { name: 'Sangrado', type: 'debuff', duration, emoji: '🩸' });
+            addLog(`🩸 ${targetName} sufre Sangrado por ${duration} turno${duration > 1 ? 's' : ''}`, 'damage');
+        }
+
+        function applyFear(targetName, duration) {
+            if (isImmuneToDebuff(targetName)) { addLog('🛡️ ' + targetName + ' es inmune a debuffs', 'buff'); return; }
+            const _fearTgt = gameState.characters[targetName];
+            if (_fearTgt && _fearTgt.passive && _fearTgt.passive.name === 'Mente Brillante') { addLog('🪓 Mente Brillante: Ivar es inmune a Miedo', 'buff'); return; }
+            if (_fearTgt && _fearTgt.passive && _fearTgt.passive.name === 'Señor de los Nazgul') { addLog('💀 Señor de los Nazgul: Rey Brujo es inmune a Miedo', 'buff'); return; }
+            if (_fearTgt && _fearTgt.passive && _fearTgt.passive.name === 'Invierno Eterno') { addLog('☠️ Invierno Eterno: Rey de la Noche es inmune a Miedo', 'buff'); return; }
+            applyDebuff(targetName, { name: 'Miedo', type: 'debuff', duration, emoji: '😱' });
+            addLog(`😱 ${targetName} siente Miedo por ${duration} turno${duration > 1 ? 's' : ''}`, 'damage');
+        }
+
+        function applyPossession(targetName, duration) {
+            if (isImmuneToDebuff(targetName)) { addLog('🛡️ ' + targetName + ' es inmune a debuffs', 'buff'); return; }
+            const _posTgt = gameState.characters[targetName];
+            if (_posTgt && _posTgt.passive && _posTgt.passive.name === 'Mente Brillante') { addLog('🪓 Mente Brillante: Ivar es inmune a Posesión', 'buff'); return; }
+            applyDebuff(targetName, { name: 'Posesion', type: 'debuff', duration, emoji: '👁️' });
+            addLog(`👁️ ${targetName} queda Poseído por ${duration} turno${duration > 1 ? 's' : ''}`, 'damage');
+        }
+
+        function applyHolyShield(targetName, duration) {
+            // Es un buff, no requiere verificación de Protección Sagrada
+            const target = gameState.characters[targetName];
+            if (!target) return;
+            target.statusEffects.push({ name: 'Escudo Sagrado', type: 'buff', duration, emoji: '✝️' });
+            addLog(`✝️ ${targetName} recibe Escudo Sagrado por ${duration} turno${duration > 1 ? 's' : ''}`, 'buff');
+        }
+
+        function applyHolyProtection(targetName, duration) {
+            const target = gameState.characters[targetName];
+            if (!target) return;
+            target.statusEffects.push({ name: 'Proteccion Sagrada', type: 'buff', duration, emoji: '🛡️' });
+            addLog(`🛡️ ${targetName} recibe Protección Sagrada (inmune a debuffs) por ${duration} turno${duration > 1 ? 's' : ''}`, 'buff');
+        }
+
+        function applyMegaFreeze(targetName, duration) {
+            applyFreeze(targetName, duration, true);
+        }
+
+        function applyFreeze(targetName, duration, mega = false) {
+
+            if (isImmuneToDebuff(targetName)) { addLog('🛡️ ' + targetName + ' es inmune a debuffs', 'buff'); return; }            const name = mega ? 'Mega Congelacion' : 'Congelacion';
+            const emoji = mega ? '🧊❄️' : '❄️';
+            const speedPenalty = mega ? 0.20 : 0.10;
+            const target = gameState.characters[targetName];
+            if (!target) return;
+
+            // Arco Granizo: al aplicar Congelación (no Mega) → +1 carga al atacante
+            if (!mega) {
+                var _afAttacker = gameState._currentTurnAttacker || gameState.selectedCharacter;
+                if (_afAttacker && _afAttacker !== targetName) {
+                    var _afChar = gameState.characters[_afAttacker];
+                    if (_afChar && (_afChar.equippedRelics||[]).some(function(r){ return r === 'Arco Granizo'; })) {
+                        _afChar.charges = Math.min(20, (_afChar.charges||0) + 1);
+                        addLog('🏹 Arco Granizo: ' + _afAttacker + ' gana 1 carga por congelar a ' + targetName, 'buff');
+                    }
+                }
+            }
+            // Guardar velocidad base antes de penalizar
+            const _freezeBaseSpeed = target.baseSpeed || target.speed;
+            target.baseSpeed = _freezeBaseSpeed;
+            const _freezeActualPenalty = Math.floor(_freezeBaseSpeed * speedPenalty);
+            applyDebuff(targetName, { name, type: 'debuff', duration, emoji, speedPenalty, speedPenaltyFlat: _freezeActualPenalty });
+            // Reducir velocidad (se restaurará cuando expire el debuff)
+            target.speed = Math.max(1, target.speed - _freezeActualPenalty);
+            addLog(emoji + ' ' + targetName + ' queda ' + (mega ? 'Mega Congelado' : 'Congelado') + ' (vel -' + _freezeActualPenalty + ') por ' + duration + ' turno' + (duration > 1 ? 's' : ''), 'damage');
+
+            // ── INVIERNO ETERNO (Rey de la Noche): 2 daño directo al objetivo cuando su equipo aplica Congelacion/Megacongelacion ──
+            if (!passiveExecuting) {
+                const _tgtRDN = gameState.characters[targetName];
+                if (_tgtRDN) {
+                    // Buscar al Rey de la Noche en el equipo contrario al objetivo
+                    const _rdnEnemyTeam = _tgtRDN.team;
+                    const _rdnAllyTeam = _rdnEnemyTeam === 'team1' ? 'team2' : 'team1';
+                    for (const _rdnN in gameState.characters) {
+                        const _rdnC = gameState.characters[_rdnN];
+                        if (!_rdnC || _rdnC.isDead || _rdnC.hp <= 0 || _rdnC.team !== _rdnAllyTeam) continue;
+                        if (_rdnC.passive && _rdnC.passive.name === 'Invierno Eterno') {
+                            passiveExecuting = true;
+                            _tgtRDN.hp = Math.max(0, (_tgtRDN.hp||0) - 2);
+                            if (_tgtRDN.hp <= 0) { _tgtRDN.isDead = true; if (typeof registerKill === 'function') registerKill('Rey de la Noche', targetName, false); }
+                            addLog('☠️ Invierno Eterno: ' + _rdnN + ' inflige 2 daño directo a ' + targetName + ' (congelación aplicada)', 'damage');
+                            passiveExecuting = false;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        function applyPoison(targetName, duration) {
+            const target = gameState.characters[targetName];
+            if (!target) return;
+            // MVP: registrar quién aplica veneno
+            if (gameState.battleStats && gameState.selectedCharacter) {
+                if (!gameState.battleStats.poisonAppliers) gameState.battleStats.poisonAppliers = new Set();
+                gameState.battleStats.poisonAppliers.add(gameState.selectedCharacter);
+            }
+            // DONCELLA ESCUDERA (Lagertha): 50% de esquivar Veneno
+            if (target.passive && target.passive.name === 'Doncella Escudera') {
+                if (Math.random() < 0.50) {
+                    addLog('🛡️ Doncella Escudera: Lagertha esquiva Veneno (50%)', 'buff');
+                    return;
+                }
+            }
+            // Veneno acumulable por duración: si ya existe un stack activo, solo suma turnos
+            // El poisonTick NO se reinicia para mantener el daño progresivo continuo
+            const existing = (target.statusEffects || []).find(e => e && normAccent(e.name||'') === 'veneno');
+            if (existing) {
+                existing.duration = (existing.duration || 0) + duration;
+                addLog(`☠️ ${targetName} acumula +${duration} turnos de Veneno (total: ${existing.duration}t, tick actual: ${existing.poisonTick || 0})`, 'damage');
+            } else {
+                applyDebuff(targetName, { name: 'Veneno', type: 'debuff', duration, emoji: '☠️', poisonTick: 0 });
+                addLog(`☠️ ${targetName} es envenenado por ${duration} turno${duration > 1 ? 's' : ''}`, 'damage');
+            }
+            if (typeof triggerIzanamiPartB === 'function') triggerIzanamiPartB(targetName);
+            // SEÑOR DE LOS NAZGUL (Rey Brujo): cura 2 HP al aplicar Veneno en un enemigo
+            if (!passiveExecuting) {
+                for (const _rbN in gameState.characters) {
+                    const _rbC = gameState.characters[_rbN];
+                    if (!_rbC || _rbC.isDead || !_rbC.passive) continue;
+                    if (_rbC.passive.name !== 'Señor de los Nazgul') continue;
+                    // Verificar que el objetivo es enemigo del Rey Brujo
+                    const _rbTarget = gameState.characters[targetName];
+                    if (!_rbTarget || _rbTarget.team === _rbC.team) continue;
+                    passiveExecuting = true;
+                    if (typeof applyHeal === 'function') applyHeal(_rbN, 2, 'Señor de los Nazgul');
+                    else _rbC.hp = Math.min(_rbC.maxHp, (_rbC.hp||0) + 2);
+                    addLog('💀 Señor de los Nazgul: Rey Brujo se cura 2 HP (Veneno aplicado a enemigo)', 'heal');
+                    passiveExecuting = false;
+                    break;
+                }
+            }
+        }
+
+
+        function applyWeaken(targetName, duration) {
+
+            if (isImmuneToDebuff(targetName)) { addLog('🛡️ ' + targetName + ' es inmune a debuffs', 'buff'); return; }            applyDebuff(targetName, { name: 'Debilitar', type: 'debuff', duration, emoji: '💔' });
+            addLog(`💔 ${targetName} sufre Debilitar por ${duration} turno${duration > 1 ? 's' : ''} (recibe 50% más de daño)`, 'damage');
+        }
+
+        function applyConfusion(targetName, duration) {
+            if (isImmuneToDebuff(targetName)) { addLog('🛡️ ' + targetName + ' es inmune a debuffs', 'buff'); return; }
+            const tgtConf = gameState.characters[targetName];
+            if (!tgtConf) return;
+            // MENTE BRILLANTE (Ivar): inmune a Confusión
+            if (tgtConf.passive && tgtConf.passive.name === 'Mente Brillante') { addLog('🪓 Mente Brillante: Ivar es inmune a Confusión', 'buff'); return; }
+            // SEÑOR DE LOS NAZGUL (Rey Brujo): inmune a Confusión
+            if (tgtConf.passive && tgtConf.passive.name === 'Señor de los Nazgul') { addLog('💀 Señor de los Nazgul: Rey Brujo es inmune a Confusión', 'buff'); return; }
+            if (tgtConf.statusEffects) {
+                tgtConf.statusEffects = tgtConf.statusEffects.filter(e => !e || normAccent(e.name || '') !== 'confusion');
+            }
+            applyDebuff(targetName, { name: 'Confusion', type: 'debuff', duration, emoji: '😵' });
+            addLog(`😵 ${targetName} queda Confundido por ${duration} turno${duration > 1 ? 's' : ''}`, 'damage');
+            if (typeof triggerIzanamiPartB === 'function') triggerIzanamiPartB(targetName);
+        }
+        // Quemadura Solar: stackeable (a diferencia de Quemadura normal)
+        function applySolarBurn(targetName, durationOrPercent, duration) {
+            // QS ahora funciona por TURNOS (bloquea curación). percent ignorado.
+            // Para compatibilidad backward: si se llama con (name, percent, duration), usar duration
+            const target = gameState.characters[targetName];
+            if (!target || !target.statusEffects) return;
+            if (hasStatusEffect(targetName, 'Proteccion Sagrada') || hasStatusEffect(targetName, 'Protección Sagrada')) {
+                addLog(`🛡️ ${targetName} es inmune a Quemadura Solar (Protección Sagrada)`, 'buff');
+                return;
+            }
+            if ((targetName === 'Daenerys Targaryen' || targetName === 'Daenerys Targaryen v2')) {
+                addLog('🐉 Dynastía del Dragón: Daenerys es inmune a Quemadura Solar', 'buff');
+                if (typeof triggerDaenerysPassiveBurnHeal === 'function') triggerDaenerysPassiveBurnHeal('Daenerys Targaryen');
+                return;
+            }
+            if ((targetName === 'Saitama' || targetName === 'Saitama v2')) {
+                addLog('🦸 Saitama es inmune a Quemadura Solar', 'buff');
+                return;
+            }
+            // Antares: Monarca de la Destruccion — inmune a Quemadura Solar
+            { const _antC = gameState.characters[targetName];
+              if (_antC && _antC.passive && _antC.passive.name === 'Monarca de la Destruccion') {
+                addLog('🐉 Monarca de la Destruccion: Antares es inmune a Quemadura Solar', 'buff'); return; } }
+            // QS: debuff por TURNOS. Solo bloquea curación, no hace daño por %
+            // Si ya tiene QS activa, reemplazar
+            target.statusEffects = (target.statusEffects || []).filter(e => !e || e.name !== 'Quemadura Solar');
+            target.statusEffects.push({ name: 'Quemadura Solar', type: 'debuff', duration: duration, emoji: '☀️' });
+            addLog('☀️ ' + targetName + ' recibe Quemadura Solar ' + duration + 'T (no puede recuperar HP)', 'damage');
+            // PRIVILEGIO IMPERIAL (Ozymandias): genera 1 carga cuando QS es aplicada sobre un enemigo
+            if (!passiveExecuting) {
+                for (const _ozn in gameState.characters) {
+                    const _ozc = gameState.characters[_ozn];
+                    if (!_ozc || _ozc.isDead || _ozc.hp <= 0) continue;
+                    if (!_ozc.passive || _ozc.passive.name !== 'Privilegio Imperial') continue;
+                    if (_ozc.team === target.team) continue; // Ozymandias debe ser enemigo del objetivo
+                    _ozc.charges = Math.min(20, (_ozc.charges||0) + 1);
+                    addLog('☀️ Privilegio Imperial: Ozymandias genera 1 carga (QS aplicada)', 'buff');
+                    break;
+                }
+                // ORGULLO DEL LEÓN (Escanor): 50% de ganar 1 carga al aplicar QS a un enemigo
+                for (const _esn in gameState.characters) {
+                    const _esc = gameState.characters[_esn];
+                    if (!_esc || _esc.isDead || _esc.hp <= 0) continue;
+                    if (!_esc.passive || _esc.passive.name !== 'Orgullo del León') continue;
+                    if (_esc.team === target.team) continue; // Escanor enemigo del objetivo
+                    if (Math.random() < 0.50) {
+                        _esc.charges = Math.min(20, (_esc.charges||0) + 1);
+                        addLog('🦁 Orgullo del León: Escanor gana 1 carga (QS aplicada, 50%)', 'buff');
+                    }
+                    break;
+                }
+                // DRAGON ALADO DE RA: al aplicar QS, 2 daño directo a todos los enemigos
+                for (const _drid in gameState.summons) {
+                    const _drs = gameState.summons[_drid];
+                    if (!_drs || _drs.name !== 'Dragon Alado de Ra' || _drs.hp <= 0) continue;
+                    if (_drs.team === target.team) continue; // Dragon es aliado del atacante
+                    passiveExecuting = true;
+                    for (const _n in gameState.characters) {
+                        const _c = gameState.characters[_n];
+                        if (!_c || _c.team !== target.team || _c.isDead || _c.hp <= 0) continue;
+                        _c.hp = Math.max(0, (_c.hp||0) - 2);
+                        if (_c.hp <= 0) { _c.isDead = true; if (typeof registerKill === 'function') registerKill(gameState.selectedCharacter||'Escanor', _n, false); }
+                    }
+                    passiveExecuting = false;
+                    addLog('🐉 Fuego de Egipto: 2 daño directo a todos los enemigos (QS aplicada)', 'damage');
+                    break;
+                }
+                // HUEVO DEL SOL: recibe 2 daño cada vez que se aplica QS
+                for (const _hsid in gameState.summons) {
+                    const _hs = gameState.summons[_hsid];
+                    if (!_hs || _hs.name !== 'Huevo del Sol' || _hs.hp <= 0) continue;
+                    if (_hs.team !== target.team) continue; // El huevo está en el equipo del objetivo
+                    _hs.hp = Math.max(0, (_hs.hp||0) - 2);
+                    addLog('🌞 Nacimiento Solar: Huevo del Sol recibe 2 daño (QS aplicada) [' + _hs.hp + ' HP]', 'damage');
+                    if (_hs.hp <= 0 && typeof removeSummon === 'function') {
+                        removeSummon(_hsid, 'derrotado');
+                    }
+                    break;
+                }
+            }
+        }
+
+        function applyFuria(targetName, duration) {
+            const target = gameState.characters[targetName];
+            if (!target) return;
+            target.statusEffects.push({ name: 'Furia', type: 'buff', duration, emoji: '🔥', untilRoundEnd: false });
+            addLog(`🔥 ${targetName} activa Furia por ${duration} turno${duration > 1 ? 's' : ''} (50% más de daño)`, 'buff');
+        }
+
+        function applyFrenesi(targetName, duration) {
+            const target = gameState.characters[targetName];
+            if (!target) return;
+            target.statusEffects.push({ name: 'Frenesi', type: 'buff', duration, emoji: '⚡', untilRoundEnd: false });
+            addLog(`⚡ ${targetName} activa Frenesí por ${duration} turno${duration > 1 ? 's' : ''} (50% chance crit)`, 'buff');
+        }
+
+        // Aplica buff Esquivar permanente (50% chance de esquivar cualquier ataque)
+        function applyDodge(targetName) {
+            const target = gameState.characters[targetName];
+            if (!target) return;
+            target.hasDodge = true;
+            target.statusEffects.push({ name: 'Esquivar', type: 'buff', duration: 9999, emoji: '💨' });
+            addLog(`💨 ${targetName} obtiene Buff Esquivar permanente (50% de esquivar ataques)`, 'buff');
+        }
+
+        // Contraataque buff: responde automáticamente con básico tras recibir un ataque
+        function applyCounterattackBuff(targetName, duration) {
+            const target = gameState.characters[targetName];
+            if (!target) return;
+            target.statusEffects.push({ name: 'Contraataque', type: 'buff', duration, emoji: '⚔️' });
+            addLog(`⚔️ ${targetName} obtiene Buff Contraataque por ${duration} turno${duration > 1 ? 's' : ''}`, 'buff');
+        }
+
+        // Sigilo por N rondas (untilRoundEnd se decrementa manualmente en processEndOfRound)
+        function applyAuraBuff(targetName, auraType) {
+            // auraType: 'fuego'|'gelida'|'oscura'|'luz'
+            const target = gameState.characters[targetName];
+            if (!target) return;
+            const auraMap = {
+                'fuego':  { name: 'Aura de fuego',  emoji: '🔥', duration: 2 },
+                'gelida': { name: 'Aura gelida',     emoji: '❄️', duration: 2 },
+                'oscura': { name: 'Aura oscura',     emoji: '🌑', duration: 2 },
+                'luz':    { name: 'Aura de Luz',     emoji: '✨', duration: 2 },
+                'infectar': { name: 'Infectar',      emoji: '🦠', duration: 2 },
+                'reflejar': { name: 'Reflejar',      emoji: '🪞', duration: 2 },
+            };
+            const aura = auraMap[auraType];
+            if (!aura) return;
+            // Remove old instance and apply new
+            target.statusEffects = (target.statusEffects || []).filter(e => e && e.name !== aura.name);
+            target.statusEffects.push({ name: aura.name, type: 'buff', duration: aura.duration, emoji: aura.emoji });
+            addLog(aura.emoji + ' ' + targetName + ' recibe ' + aura.name + ' (' + aura.duration + ' turnos)', 'buff');
+        }
+
+        function applyStealth(targetName, rounds) {
+            const target = gameState.characters[targetName];
+            if (!target) return;
+            // Limpiar sigilo previo
+            target.statusEffects = target.statusEffects.filter(e => !(e && normAccent(e.name || '') === 'sigilo'));
+            target.statusEffects.push({
+                name: 'Sigilo', emoji: '👤', type: 'buff',
+                duration: 999, untilRoundEnd: true, sigiloRoundsLeft: rounds
+            });
+            addLog(`👤 ${targetName} activa Sigilo por ${rounds} ronda${rounds > 1 ? 's' : ''}`, 'buff');
+        }
