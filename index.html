@@ -75,7 +75,7 @@
 <!-- ════════════════════════════════════════════
      MODE SELECT SCREEN
 ════════════════════════════════════════════ -->
-<div id="modeSelectScreen" style="display:none; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; gap:2.5rem; position:relative; z-index:1;">
+<div id="modeSelectScreen" style="display:none; position:fixed; inset:0; z-index:100; flex-direction:column; align-items:center; justify-content:center; gap:2.5rem; overflow-y:auto;">
   <div class="login-bg"></div>
 
   <div class="game-logo">
@@ -108,7 +108,7 @@
 <!-- ════════════════════════════════════════════
      LOBBY SCREEN
 ════════════════════════════════════════════ -->
-<div id="lobbyScreen" style="display:none;">
+<div id="lobbyScreen" style="display:none; position:fixed; inset:0; z-index:100; overflow-y:auto;">
   <!-- Header -->
   <div class="lobby-header">
     <div class="lobby-logo">⚔️ UNIVERSUS</div>
@@ -253,7 +253,7 @@
 <!-- ════════════════════════════════════════════
      WAITING ROOM SCREEN
 ════════════════════════════════════════════ -->
-<div id="waitingScreen" style="display:none;">
+<div id="waitingScreen" style="display:none; position:fixed; inset:0; z-index:100;">
   <div class="login-bg"></div>
   <div style="font-family:'Chakra Petch',sans-serif; font-size:1rem; color:var(--plasma-blue); letter-spacing:.2em; text-transform:uppercase;">
     ⏳ Sala de Espera
@@ -270,7 +270,7 @@
 <!-- ════════════════════════════════════════════
      CHARACTER SELECT SCREEN
 ════════════════════════════════════════════ -->
-<div id="charSelectScreen" style="display:none;">
+<div id="charSelectScreen" style="display:none; position:fixed; inset:0; z-index:2000; overflow-y:auto; background:#04060f;">
   <div class="login-bg"></div>
 
   <div class="cs-title">UNIVERSUS</div>
