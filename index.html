@@ -811,7 +811,11 @@
   window.csSelectMode = function(mode) {
     csState.gameMode = mode;
     audioManager.playSelect();
-    document.getElementById('modeSelectScreen').style.display = 'none';
+    // Ocultar TODAS las pantallas antes de mostrar charSelect
+    ['loginScreen','lobbyScreen','waitingScreen','modeSelectScreen','rankedTeamScreen'].forEach(function(id) {
+      var el2 = document.getElementById(id);
+      if (el2) el2.style.display = 'none';
+    });
     document.getElementById('charSelectScreen').style.display = 'block';
     const myName = (typeof currentUser !== 'undefined' && currentUser && currentUser.displayName) ? currentUser.displayName : 'Jugador 1';
     if (mode === 'solo') {
@@ -1072,10 +1076,10 @@
         copy.team = entry.team; copy.baseName = base;
         selectedChars[key] = copy;
       });
-      ['loginScreen','lobbyScreen','waitingScreen','modeSelectScreen','charSelectScreen'].forEach(function(id){
+      ['loginScreen','lobbyScreen','waitingScreen','modeSelectScreen','charSelectScreen','rankedTeamScreen'].forEach(function(id){
         const el2 = document.getElementById(id); if(el2) el2.style.display='none';
       });
-      document.querySelector('.game-container').style.display = 'flex';
+      document.querySelector('.game-container').style.display = 'block';
       initGame(selectedChars);
       const myName = (typeof currentUser!=='undefined'&&currentUser&&currentUser.displayName)?currentUser.displayName:'Jugador 1';
       if (csState.gameMode==='boss') window._teamNames={team1:myName,team2:'Jefe de Sala'};
