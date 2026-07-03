@@ -1611,3 +1611,47 @@ body::before {
   background: var(--border-subtle);
   margin: 12px 0;
 }
+
+/* ── CARD GRID LAYOUT ─────────────────────────────────────── */
+.team-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+#team1Characters,
+#team2Characters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  padding: 4px;
+}
+
+@media (max-width: 1200px) {
+  .battle-arena { grid-template-columns: 1fr 240px 1fr; }
+  #team1Characters, #team2Characters { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .battle-arena { grid-template-columns: 1fr 200px 1fr; }
+  #team1Characters, #team2Characters { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── PULSE ANIMATION FOR ACTIVE CARD ─────────────────────── */
+@keyframes pulse-active {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ── GAME CONTAINER FULL HEIGHT ───────────────────────────── */
+.game-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.battle-arena {
+  flex: 1;
+  align-items: start;
+  padding: 1rem 1.2rem;
+}

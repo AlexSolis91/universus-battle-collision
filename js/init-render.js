@@ -1,60 +1,58 @@
 // ============================================================
-//  UNIVERSUS: Battle Collision — init-render.js v2.1
-//  Fix: showContinueButton usa botón flotante original
-//  Fix: csSelectMode registrado globalmente
+//  UNIVERSUS: Battle Collision — init-render.js v3.0
+//  Sistema de cartas clickeables — sin boton flotante
 // ============================================================
 
-// ── HELPERS ─────────────────────────────────────────────────
-
 function normAccent(str) {
-    return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    return (str||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 }
 
 function addLog(message, type) {
     const logEl = document.getElementById('battleLogContent');
     if (!logEl) return;
     const entry = document.createElement('div');
-    entry.className = 'log-entry ' + (type || 'info');
+    entry.className = 'log-entry ' + (type||'info');
     entry.textContent = message;
     logEl.appendChild(entry);
     logEl.scrollTop = logEl.scrollHeight;
-    if (gameState.battleLog) gameState.battleLog.push({ message, type });
+    if (gameState.battleLog) gameState.battleLog.push({message,type});
 }
 
-// ── CONTINUE BUTTON (botón flotante — compatible con turn-logic.js) ──────────
-
-// showContinueButton — definida en turn-logic.js (se carga después)
-// Este stub es sobreescrito automáticamente
+// showContinueButton: reemplaza el boton flotante
+// Si es turno de IA -> ejecuta automaticamente
+// Si es turno del jugador -> ilumina la carta (renderCharacters lo hace)
 function showContinueButton() {
-    console.log('[init-render] showContinueButton stub — turn-logic.js no ha cargado aún');
+    const name = gameState.selectedCharacter;
+    const char = gameState.characters[name];
+    if (!char) return;
+    // Ocultar boton viejo si existe
+    const oldBtn = document.getElementById('floatingContinueBtn');
+    if (oldBtn) oldBtn.style.display = 'none';
+    // IA: ejecutar automaticamente
+    if (gameState.gameMode === 'solo' && char.team === gameState.aiTeam) {
+        setTimeout(function() {
+            if (typeof continueTurn === 'function') continueTurn();
+        }, 700);
+        return;
+    }
+    // Jugador: solo re-renderizar para iluminar la carta activa
+    renderCharacters();
+    _updateRoundDisplay();
 }
 
 function hideContinueButton() {
     const btn = document.getElementById('floatingContinueBtn');
     if (btn) btn.style.display = 'none';
-    // También ocultar indicador de espera online si existe
-    const w = document.getElementById('waitingOpponentTurn');
-    if (w) w.style.display = 'none';
 }
-
-// continueTurn — definida en turn-logic.js
 
 function closeActionModal() {
     const modal = document.getElementById('actionModal');
     if (modal) modal.classList.remove('show');
 }
-
 function closeTargetModal() {
     const modal = document.getElementById('targetModal');
     if (modal) modal.classList.remove('show');
 }
-
-function closeBattleStatus() {
-    const modal = document.getElementById('battleStatusModal');
-    if (modal) modal.style.display = 'none';
-}
-
-// ── GAME INIT ────────────────────────────────────────────────
 
 function initGame(selectedCharacters) {
     gameState.selectedCharacter = null;
@@ -69,430 +67,333 @@ function initGame(selectedCharacters) {
     gameState._attackedThisTurn = false;
     gameState._miedoActive = false;
     gameState.summons = {};
-
     const logEl = document.getElementById('battleLogContent');
     if (logEl) logEl.innerHTML = '';
     gameState.battleLog = [];
-
-    for (let k in gameState.summons) delete gameState.summons[k];
-
-    const source = selectedCharacters || characterData;
-    gameState.characters = JSON.parse(JSON.stringify(source));
-
+    gameState.characters = JSON.parse(JSON.stringify(selectedCharacters||{}));
     gameState.battleStats = {
-        totalDamage: {}, crits: 0, summonsKilled: 0, oversUsed: 0,
-        healsGiven: 0, team1Damage: 0, team2Damage: 0, killMap: {},
-        critsByChar: {}, damageDone: {}, chargesGenSelf: {}, chargesGenAllies: {},
-        damageReceived: {}, debuffsApplied: {}, buffsApplied: {}, summonsDone: {},
-        summonKills: {}, healingDone: {}, ccApplied: {}, poisonDamage: {}, burnDamage: {},
-        poisonAppliers: new Set(), burnAppliers: new Set(),
+        totalDamage:{},crits:0,summonsKilled:0,oversUsed:0,
+        healsGiven:0,team1Damage:0,team2Damage:0,killMap:{},
+        damageDone:{},poisonAppliers:new Set(),burnAppliers:new Set(),
     };
-
-    // Proxy statusEffects para pasiva Monarca de la Destruccion
-    function _wrapStatusEffects(charName) {
-        const ch = gameState.characters[charName];
-        if (!ch || !Array.isArray(ch.statusEffects)) return;
-        const _origArr = ch.statusEffects;
-        const _proxied = new Proxy(_origArr, {
-            get(target, prop) {
-                if (prop === '__isProxied') return true;
-                if (prop === 'push') {
-                    return function(...items) {
-                        const result = Array.prototype.push.apply(target, items);
-                        items.forEach(function(item) {
-                            if (item && item.type === 'buff' && !item.passiveHidden &&
-                                typeof triggerMonarcaDestruccion === 'function') {
-                                triggerMonarcaDestruccion(charName);
-                            }
-                        });
-                        return result;
-                    };
-                }
-                return target[prop];
-            }
-        });
-        ch.statusEffects = _proxied;
-    }
-    for (const _cn in gameState.characters) _wrapStatusEffects(_cn);
-
-    // Setter para mantener Proxy al filtrar statusEffects
-    (function() {
-        for (const _cn in gameState.characters) {
-            const _ch = gameState.characters[_cn];
-            if (!_ch) continue;
-            let _arr = _ch.statusEffects;
-            Object.defineProperty(_ch, 'statusEffects', {
-                get: function() { return _arr; },
-                set: function(newVal) {
-                    _arr = newVal;
-                    if (Array.isArray(newVal) && !newVal.__isProxied) {
-                        const _pArr = newVal;
-                        const _name = _cn;
-                        const _proxied2 = new Proxy(_pArr, {
-                            get(target2, prop2) {
-                                if (prop2 === '__isProxied') return true;
-                                if (prop2 === 'push') {
-                                    return function(...items2) {
-                                        const r = Array.prototype.push.apply(target2, items2);
-                                        items2.forEach(function(item2) {
-                                            if (item2 && item2.type === 'buff' && !item2.passiveHidden &&
-                                                typeof triggerMonarcaDestruccion === 'function') {
-                                                triggerMonarcaDestruccion(_name);
-                                            }
-                                        });
-                                        return r;
-                                    };
-                                }
-                                return target2[prop2];
-                            }
-                        });
-                        _arr = _proxied2;
-                    }
-                },
-                configurable: true, enumerable: true
-            });
-        }
-    })();
-
     _applyPermanentPassives();
     buildTurnOrder();
     renderCharacters();
     _updateRoundDisplay();
-    setTimeout(function() { startTurn(); }, 400);
+    setTimeout(function(){startTurn();},500);
 }
 
 function _applyPermanentPassives() {
-    for (const charName in gameState.characters) {
-        const ch = gameState.characters[charName];
-        if (!ch || !ch.passive) continue;
-        const baseName = ch.baseName || charName;
-
-        if (baseName === 'Aldebaran') ch.statusEffects.push({ name:'Provocacion',type:'buff',duration:999,permanent:true,passiveHidden:true,emoji:'🛡️' });
-        if (baseName === 'Thestalos') ch.statusEffects.push({ name:'Contraataque',type:'buff',duration:999,permanent:true,passiveHidden:true,emoji:'⚔️' });
-        if (baseName === 'Aspros de Gemini') ch.statusEffects.push({ name:'Esquiva Area',type:'buff',duration:999,permanent:true,passiveHidden:true,emoji:'✨' });
-        if (baseName === 'Minato Namikaze') ch.statusEffects.push({ name:'Esquiva Area',type:'buff',duration:999,permanent:true,passiveHidden:true,emoji:'⚡' });
-        if (baseName === 'Flash') { ch.statusEffects.push({ name:'Esquiva Area',type:'buff',duration:999,permanent:true,passiveHidden:true,emoji:'⚡' }); ch.esquivaAreaPassive = true; }
-        if (baseName === 'Darth Vader') {
-            ch.immuneToMiedo = true; ch.immuneToConfusion = true;
-            if (!ch.statusEffects.some(function(e){ return e && (e.name||'').toLowerCase().replace(/\s/g,'') === 'auraoscura'; }))
-                ch.statusEffects.push({ name:'Aura oscura',type:'buff',duration:999,permanent:true,passiveHidden:true,emoji:'🌑' });
+    for (const cn in gameState.characters) {
+        const ch = gameState.characters[cn];
+        if (!ch||!ch.passive) continue;
+        const bn = ch.baseName||cn;
+        if (bn==='Darth Vader') {
+            ch.immuneToMiedo=true; ch.immuneToConfusion=true;
+            ch.statusEffects=ch.statusEffects||[];
+            if (!ch.statusEffects.some(function(e){return e&&normAccent(e.name||'')==='aura oscura';}))
+                ch.statusEffects.push({name:'Aura oscura',type:'buff',duration:999,permanent:true,passiveHidden:true,emoji:'🌑'});
         }
-        if (baseName === 'Gandalf') { ch.immuneToMiedo=true; ch.immuneToConfusion=true; ch.immuneToPosesion=true; }
-        if (baseName === 'Rey Brujo de Angmar') {
-            ch.statusEffects.push({ name:'Provocacion',type:'buff',duration:999,permanent:true,passiveHidden:true,emoji:'🛡️' });
-            ch.statusEffects.push({ name:'Infectar',type:'buff',duration:999,permanent:true,passiveHidden:true,emoji:'🦠' });
+        if (bn==='Superman') {
+            ch.statusEffects=ch.statusEffects||[];
+            if (!ch.statusEffects.some(function(e){return e&&normAccent(e.name||'')==='provocacion';}))
+                ch.statusEffects.push({name:'Provocacion',type:'buff',duration:999,permanent:true,passiveHidden:true,emoji:'⚠️'});
         }
-        if (baseName === 'Anakin Skywalker') ch.anakinAsistir = true;
+        if (bn==='Gandalf') { ch.immuneToMiedo=true; ch.immuneToConfusion=true; ch.immuneToPosesion=true; }
     }
 }
 
-// ── TURN ORDER ────────────────────────────────────────────────
-
 function buildTurnOrder() {
-    const entries = [];
+    const entries=[];
     for (const name in gameState.characters) {
-        const ch = gameState.characters[name];
-        if (ch && !ch.isDead && ch.hp > 0) entries.push({ name: name, speed: ch.speed || 80 });
+        const ch=gameState.characters[name];
+        if (ch&&!ch.isDead&&ch.hp>0) entries.push({name:name,speed:ch.speed||80});
     }
-    entries.sort(function(a, b) { return b.speed - a.speed || a.name.localeCompare(b.name); });
-    gameState.turnOrder = entries.map(function(e) { return e.name; });
-    gameState.currentTurnIndex = 0;
-    gameState.aliveCountAtRoundStart = entries.length;
+    entries.sort(function(a,b){return b.speed-a.speed||a.name.localeCompare(b.name);});
+    gameState.turnOrder=entries.map(function(e){return e.name;});
+    gameState.currentTurnIndex=0;
+    gameState.aliveCountAtRoundStart=entries.length;
 }
 
 function _updateRoundDisplay() {
-    const round = gameState.currentRound || 1;
-    ['turnConfirmRound','roundCounter','battleStatusRound','roundDisplayHeader'].forEach(function(id) {
-        const el = document.getElementById(id);
-        if (el) el.textContent = 'RONDA ' + round;
+    const r=gameState.currentRound||1;
+    ['roundCounter','roundDisplayHeader','battleStatusRound'].forEach(function(id){
+        const el=document.getElementById(id);
+        if (el) el.textContent='RONDA '+r;
     });
 }
 
-// ── PORTRAIT RESOLVER ────────────────────────────────────────
-
-function getActivePortrait(name, char) {
+function getActivePortrait(name,char) {
     if (!char) return null;
-    let _dynPortrait = char.portrait || '';
-
-    if (char.gokuForm) {
-        if (char.gokuForm === 'ss1' && char.portraitSS1) _dynPortrait = char.portraitSS1;
-        else if (char.gokuForm === 'ss3' && char.portraitSS3) _dynPortrait = char.portraitSS3;
-        else if (char.gokuForm === 'ssblue' && char.portraitSSBlue) _dynPortrait = char.portraitSSBlue;
-        else if (char.gokuForm === 'ui' && char.portraitUI) _dynPortrait = char.portraitUI;
+    let p=char.portrait||'';
+    if ((char.rikudoMode||char.fenixArmorActive||char.kuramaMode||char.dragonFormActive||
+         char.ultraInstinto||char.darkSideAwakened||char.muzanTransformed||char.garouSaitamaMode||
+         char.supermanPrimeMode||char.varianTransformed||char.escanorTheOneActive||char.antaresTransformed||
+         char.gokuForm||char.narutoForm||char.vegetaForm) &&
+        (char.transformPortrait||char.transformationPortrait)) {
+        p=char.transformPortrait||char.transformationPortrait;
     }
-    if (char.narutoForm) {
-        if (char.narutoForm === 'sabio' && char.portraitSabio) _dynPortrait = char.portraitSabio;
-        else if (char.narutoForm === 'kyubi' && char.portraitKyubi) _dynPortrait = char.portraitKyubi;
-        else if (char.narutoForm === 'baryon' && char.portraitBaryon) _dynPortrait = char.portraitBaryon;
-    }
-    if (char.vegetaForm) {
-        if (char.vegetaForm === 'ssblue_evo' && char.portraitSSBlueEvo) _dynPortrait = char.portraitSSBlueEvo;
-        else if (char.vegetaForm === 'ultra_ego' && char.portraitUltraEgo) _dynPortrait = char.portraitUltraEgo;
-    }
-
-    const hasTransform = !!(char.rikudoMode || char.fenixArmorActive || char.kuramaMode ||
-        char.dragonFormActive || char.ultraInstinto || char.darkSideAwakened ||
-        char.muzanTransformed || char.garouSaitamaMode || char.supermanPrimeMode ||
-        char.varianTransformed || char.escanorTheOneActive ||
-        (char.daemonJineteTurns || 0) > 0 || char.antaresTransformed);
-
-    if (hasTransform && (char.transformPortrait || char.transformationPortrait)) {
-        _dynPortrait = char.transformPortrait || char.transformationPortrait;
-    }
-    return _dynPortrait || null;
+    return p||null;
 }
 
-// ── RENDER CHARACTERS ────────────────────────────────────────
+// ── RENDER CHARACTERS AS CARDS ──────────────────────────────
 
 function renderCharacters() {
-    const team1Container = document.getElementById('team1Characters');
-    const team2Container = document.getElementById('team2Characters');
-    if (!team1Container || !team2Container) return;
-
-    team1Container.innerHTML = '';
-    team2Container.innerHTML = '';
+    const c1=document.getElementById('team1Characters');
+    const c2=document.getElementById('team2Characters');
+    if (!c1||!c2) return;
+    c1.innerHTML=''; c2.innerHTML='';
 
     for (const name in gameState.characters) {
-        const char = gameState.characters[name];
+        const char=gameState.characters[name];
         if (!char) continue;
+        const container=char.team==='team1'?c1:c2;
+        const isDead=char.hp<=0||char.isDead;
+        const isActive=gameState.selectedCharacter===name;
+        const isPlayer=char.team!==gameState.aiTeam;
+        const isClickable=isActive&&isPlayer&&!isDead;
+        const portrait=getActivePortrait(name,char);
 
-        const container = char.team === 'team1' ? team1Container : team2Container;
-        const isDefeated = char.hp <= 0 || char.isDead;
-        const isActive = gameState.selectedCharacter === name;
-        const isTeam2 = char.team === 'team2';
-        const isBoss = !!char.isBoss;
-        const portrait = getActivePortrait(name, char);
+        const hpPct=char.maxHp>0?Math.max(0,(char.hp/char.maxHp)*100):0;
+        const chgPct=Math.min(100,((char.charges||0)/20)*100);
+        const v2=typeof CHARACTERS_V2!=='undefined'?CHARACTERS_V2[char.baseName||name]:null;
+        const charLevel=v2?v2.level:1;
+        const xpPct=v2&&typeof XPSystem!=='undefined'?Math.min(100,(v2.xp/XPSystem.xpNeeded(v2.level))*100):0;
 
-        const hpPct = char.maxHp > 0 ? (char.hp / char.maxHp) * 100 : 0;
-        const hpClass = hpPct > 60 ? '' : hpPct > 30 ? 'hp-medium' : 'hp-low hp-critical';
-        const chargesPct = Math.min(100, ((char.charges || 0) / 20) * 100);
+        const card=document.createElement('div');
+        card.id='char-'+name.replace(/\s+/g,'-');
+        card.dataset.charname=name;
 
-        const cardEl = document.createElement('div');
-        cardEl.className = ['char-card', isDefeated ? 'dead' : '', isActive ? 'active' : '', isTeam2 ? 'team2-card' : '', isBoss ? 'boss-card' : ''].filter(Boolean).join(' ');
-        cardEl.id = 'char-' + name.replace(/\s+/g, '-');
-        cardEl.dataset.charname = name;
-        cardEl.style.position = 'relative';
-        cardEl.title = 'Ver ficha de ' + name;
-        cardEl.onclick = function() { if (typeof showCharInfo === 'function') showCharInfo(name); };
+        const glowColor=char.team==='team1'?'#00d4ff':'#ff6644';
 
-        // Portrait
+        let boxShadow='0 2px 14px rgba(0,0,0,0.6)';
+        let transform='none';
+        let borderColor='rgba(255,255,255,0.08)';
+        if (isActive&&!isDead) {
+            boxShadow='0 0 0 3px '+glowColor+', 0 0 24px '+glowColor+'55';
+            transform='translateY(-5px) scale(1.04)';
+            borderColor=glowColor;
+        }
+
+        card.style.cssText=[
+            'position:relative','border-radius:14px','overflow:hidden',
+            'border:2px solid '+borderColor,
+            'cursor:'+(isClickable?'pointer':'default'),
+            'transition:transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s',
+            'opacity:'+(isDead?'0.3':'1'),
+            'filter:'+(isDead?'grayscale(1) brightness(0.5)':'none'),
+            'pointer-events:'+(isDead?'none':'all'),
+            'background:#080d1a',
+            'box-shadow:'+boxShadow,
+            'transform:'+transform,
+            'flex-shrink:0',
+        ].join(';');
+
+        // Portrait area (top 72% of card)
+        const imgArea=document.createElement('div');
+        imgArea.style.cssText='position:relative;width:100%;padding-bottom:115%;overflow:hidden;background:linear-gradient(180deg,#0d1428 0%,#030508 100%);';
+
         if (portrait) {
-            const img = document.createElement('img');
-            img.className = 'char-portrait' + (isDefeated ? ' defeated-img' : '');
-            img.src = portrait;
-            img.alt = name;
-            img.loading = 'eager';
-            img.referrerPolicy = 'no-referrer';
-            const ph = document.createElement('div');
-            ph.className = 'char-portrait-fallback';
-            ph.textContent = '⚔️';
-            ph.style.display = 'none';
-            img.onerror = function() { this.style.display = 'none'; ph.style.display = 'flex'; };
-            cardEl.appendChild(img);
-            cardEl.appendChild(ph);
+            const img=document.createElement('img');
+            img.src=portrait; img.alt=name; img.loading='eager'; img.referrerPolicy='no-referrer';
+            img.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;';
+            img.onerror=function(){this.style.display='none';};
+            imgArea.appendChild(img);
         } else {
-            const ph = document.createElement('div');
-            ph.className = 'char-portrait-fallback';
-            ph.textContent = '⚔️';
-            cardEl.appendChild(ph);
+            const ph=document.createElement('div');
+            ph.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:3rem;';
+            ph.textContent='⚔️';
+            imgArea.appendChild(ph);
         }
 
-        // Info panel
-        const infoDiv = document.createElement('div');
-        infoDiv.className = 'char-info';
+        // Gradient overlay for readability
+        const grad=document.createElement('div');
+        grad.style.cssText='position:absolute;bottom:0;left:0;right:0;height:45%;background:linear-gradient(0deg,rgba(4,6,15,0.98) 0%,rgba(4,6,15,0.6) 60%,transparent 100%);pointer-events:none;';
+        imgArea.appendChild(grad);
 
-        // Name row
-        const nameDiv = document.createElement('div');
-        nameDiv.className = 'char-name';
-        nameDiv.textContent = name;
-        if (_isTransformed(name, char)) {
-            const tf = document.createElement('span');
-            tf.style.cssText = 'font-size:.58rem;color:var(--plasma-gold);font-family:Chakra Petch,sans-serif;margin-left:4px;';
-            tf.textContent = '⚡TF';
-            nameDiv.appendChild(tf);
-        }
-        infoDiv.appendChild(nameDiv);
+        // Level badge - top right
+        const lvlBadge=document.createElement('div');
+        lvlBadge.style.cssText='position:absolute;top:6px;right:7px;font-family:Chakra Petch,sans-serif;font-size:.85rem;font-weight:700;color:#ffd700;text-shadow:0 0 8px rgba(255,215,0,0.9),0 1px 3px rgba(0,0,0,1);z-index:5;line-height:1;';
+        lvlBadge.textContent=charLevel;
+        imgArea.appendChild(lvlBadge);
 
-        // Stats row
-        const statsDiv = document.createElement('div');
-        statsDiv.className = 'char-hp-text';
-        const shieldTxt = char.shield > 0 ? ' 🛡️' + char.shield : '';
-        statsDiv.innerHTML = '❤️ ' + char.hp + '/' + char.maxHp + shieldTxt + ' &nbsp;·&nbsp; ⚡ <span style="color:var(--plasma-blue);">' + (char.charges || 0) + '/20</span>';
-        infoDiv.appendChild(statsDiv);
-
-        // HP bar
-        const hpWrap = document.createElement('div');
-        hpWrap.className = 'hp-bar-wrap';
-        const hpBar = document.createElement('div');
-        hpBar.className = 'hp-bar ' + hpClass;
-        hpBar.style.width = hpPct + '%';
-        hpWrap.appendChild(hpBar);
-        infoDiv.appendChild(hpWrap);
-
-        // Charges bar
-        const chWrap = document.createElement('div');
-        chWrap.style.cssText = 'margin-top:4px;height:4px;background:rgba(0,0,0,0.3);border-radius:2px;overflow:hidden;';
-        const chBar = document.createElement('div');
-        chBar.style.cssText = 'height:100%;border-radius:2px;background:linear-gradient(90deg,rgba(0,212,255,0.5),rgba(0,212,255,0.85));transition:width .3s ease;width:' + chargesPct + '%;';
-        chWrap.appendChild(chBar);
-        infoDiv.appendChild(chWrap);
-
-        // Status effects
-        const statusHtml = _renderStatusPills(char);
-        if (statusHtml) {
-            const statusDiv = document.createElement('div');
-            statusDiv.className = 'char-status-effects';
-            statusDiv.innerHTML = statusHtml;
-            infoDiv.appendChild(statusDiv);
+        // Active turn indicator - top left
+        if (isActive&&!isDead) {
+            const ind=document.createElement('div');
+            ind.style.cssText='position:absolute;top:6px;left:6px;font-family:Chakra Petch,sans-serif;font-size:.5rem;font-weight:700;color:'+glowColor+';background:rgba(0,0,0,0.8);border:1px solid '+glowColor+';border-radius:4px;padding:2px 5px;letter-spacing:.06em;z-index:5;';
+            ind.textContent=isPlayer?'▶ TURNO':'🤖 IA';
+            imgArea.appendChild(ind);
         }
 
-        // Relic minis
-        const relicHtml = _renderRelicMinis(name, char);
-        if (relicHtml) {
-            const relicDiv = document.createElement('div');
-            relicDiv.style.cssText = 'display:flex;gap:3px;margin-top:4px;';
-            relicDiv.innerHTML = relicHtml;
-            infoDiv.appendChild(relicDiv);
+        // Name at bottom of image
+        const nameEl=document.createElement('div');
+        nameEl.style.cssText='position:absolute;bottom:6px;left:6px;right:6px;font-family:Chakra Petch,sans-serif;font-size:.62rem;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,1);z-index:5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        nameEl.textContent=name;
+        imgArea.appendChild(nameEl);
+
+        card.appendChild(imgArea);
+
+        // Stats panel (bottom section)
+        const stats=document.createElement('div');
+        stats.style.cssText='padding:6px 7px;background:#080d1a;';
+
+        // HP row
+        const hpRow=document.createElement('div');
+        hpRow.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;';
+        hpRow.innerHTML='<span style="font-family:Chakra Petch,sans-serif;font-size:.55rem;color:#aaa;">HP</span>' +
+            '<span style="font-family:Chakra Petch,sans-serif;font-size:.55rem;color:#e8edf5;">'+char.hp+'/'+char.maxHp+'</span>';
+        stats.appendChild(hpRow);
+
+        const hpWrap=document.createElement('div');
+        hpWrap.style.cssText='height:5px;background:rgba(0,0,0,0.5);border-radius:3px;overflow:hidden;margin-bottom:4px;';
+        const hpBarEl=document.createElement('div');
+        const hpColor=hpPct>60?'#10b981':hpPct>30?'#f59e0b':'#ef4444';
+        hpBarEl.style.cssText='height:100%;width:'+hpPct+'%;background:'+hpColor+';border-radius:3px;transition:width .4s;';
+        hpWrap.appendChild(hpBarEl); stats.appendChild(hpWrap);
+
+        // Charges row
+        const chgRow=document.createElement('div');
+        chgRow.style.cssText='display:flex;align-items:center;gap:3px;margin-bottom:2px;';
+        chgRow.innerHTML='<span style="font-size:.55rem;">⚡</span><span style="font-family:Chakra Petch,sans-serif;font-size:.55rem;color:#f59e0b;">'+( char.charges||0)+'/20</span>';
+        stats.appendChild(chgRow);
+
+        const chgWrap=document.createElement('div');
+        chgWrap.style.cssText='height:4px;background:rgba(0,0,0,0.4);border-radius:2px;overflow:hidden;margin-bottom:4px;';
+        const chgBarEl=document.createElement('div');
+        chgBarEl.style.cssText='height:100%;width:'+chgPct+'%;background:#f59e0b;border-radius:2px;transition:width .4s;';
+        chgWrap.appendChild(chgBarEl); stats.appendChild(chgWrap);
+
+        // XP bar
+        if (v2) {
+            const xpRow=document.createElement('div');
+            xpRow.style.cssText='display:flex;align-items:center;gap:3px;margin-bottom:2px;';
+            xpRow.innerHTML='<span style="font-family:Chakra Petch,sans-serif;font-size:.5rem;color:#4fc3f7;">XP</span>';
+            stats.appendChild(xpRow);
+            const xpWrap=document.createElement('div');
+            xpWrap.style.cssText='height:3px;background:rgba(0,0,0,0.4);border-radius:2px;overflow:hidden;margin-bottom:4px;';
+            const xpBarEl=document.createElement('div');
+            xpBarEl.style.cssText='height:100%;width:'+xpPct+'%;background:#4fc3f7;border-radius:2px;';
+            xpWrap.appendChild(xpBarEl); stats.appendChild(xpWrap);
         }
 
-        cardEl.appendChild(infoDiv);
-        container.appendChild(cardEl);
+        // Status pills
+        const activePills=(char.statusEffects||[]).filter(function(e){return e&&!e.passiveHidden;}).slice(0,3);
+        if (activePills.length>0) {
+            const pillsDiv=document.createElement('div');
+            pillsDiv.style.cssText='display:flex;flex-wrap:wrap;gap:2px;';
+            activePills.forEach(function(e){
+                const isBuff=e.type==='buff';
+                const bg=isBuff?'rgba(16,185,129,0.22)':'rgba(239,68,68,0.22)';
+                const col=isBuff?'#6ee7b7':'#fca5a5';
+                const dur=e.permanent?'':(e.duration>0?' '+e.duration:'');
+                const span=document.createElement('span');
+                span.style.cssText='font-size:.48rem;padding:1px 4px;border-radius:3px;background:'+bg+';color:'+col+';white-space:nowrap;';
+                span.textContent=(e.emoji||'')+' '+(e.name||'')+dur;
+                pillsDiv.appendChild(span);
+            });
+            stats.appendChild(pillsDiv);
+        }
+
+        card.appendChild(stats);
+
+        // Click: solo si es la carta activa del jugador
+        if (isClickable) {
+            card.onclick=function(){
+                if (typeof continueTurn==='function') continueTurn();
+            };
+        }
+
+        container.appendChild(card);
     }
 
-    // Update turn display
     _updateCurrentTurnDisplay();
 }
 
-function _isTransformed(name, char) {
-    return !!(char.rikudoMode || char.fenixArmorActive || char.kuramaMode ||
-        char.dragonFormActive || char.ultraInstinto || char.darkSideAwakened ||
-        char.muzanTransformed || char.garouSaitamaMode || char.supermanPrimeMode ||
-        char.varianTransformed || char.escanorTheOneActive ||
-        (char.daemonJineteTurns || 0) > 0 || char.antaresTransformed ||
-        char.gokuForm || char.narutoForm || char.vegetaForm);
-}
-
-function _renderStatusPills(char) {
-    if (!char.statusEffects || !char.statusEffects.length) return '';
-    return char.statusEffects
-        .filter(function(e) { return e && !e.passiveHidden; })
-        .slice(0, 6)
-        .map(function(e) {
-            const isBuff = e.type === 'buff';
-            const color = isBuff ? 'rgba(59,130,246,0.2)' : 'rgba(239,68,68,0.15)';
-            const textColor = isBuff ? '#93c5fd' : '#fca5a5';
-            const border = isBuff ? 'rgba(59,130,246,0.3)' : 'rgba(239,68,68,0.3)';
-            const dur = e.permanent ? '' : (e.duration > 0 ? '(' + e.duration + ')' : '');
-            return '<span style="font-size:.6rem;padding:1px 5px;border-radius:3px;background:' + color + ';border:1px solid ' + border + ';color:' + textColor + ';white-space:nowrap;">' + (e.emoji || (isBuff ? '✨' : '❗')) + ' ' + (e.name || '') + dur + '</span>';
-        }).join('');
-}
-
-function _renderRelicMinis(name, char) {
-    if (!char.equippedRelics || !char.equippedRelics.length) return '';
-    const tierColors = { Raro:'#aaa', Especial:'#4fc3f7', Epico:'#c864ff', Legendario:'#ffd700' };
-    return char.equippedRelics.slice(0, 3).map(function(relicName) {
-        const rd = typeof RELICS_DATA !== 'undefined' ? RELICS_DATA[relicName] : null;
-        if (!rd || !rd.img) return '';
-        const color = tierColors[rd.tier] || '#aaa';
-        return '<img src="' + rd.img + '" title="' + relicName + '" style="width:18px;height:18px;object-fit:contain;border-radius:3px;border:1px solid ' + color + ';opacity:.85;" onerror="this.style.display=\'none\'">';
-    }).join('');
-}
-
 function _updateCurrentTurnDisplay() {
-    const name = gameState.selectedCharacter;
-    const el = document.getElementById('currentTurnDisplay');
+    const name=gameState.selectedCharacter;
+    const el=document.getElementById('currentTurnDisplay');
     if (!el) return;
-    el.textContent = name ? ('▶ ' + name) : 'Calculando...';
+    if (!name) { el.textContent='Calculando...'; el.style.color='#445577'; return; }
+    const char=gameState.characters[name];
+    const isAI=char&&char.team===gameState.aiTeam;
+    el.textContent=(isAI?'🤖 ':' ▶ ')+name;
+    el.style.color=isAI?'#ff6644':'#00d4ff';
 }
-
-// ── RENDER SUMMONS ────────────────────────────────────────────
 
 function renderSummons() {
-    const t1 = document.getElementById('team1Summons');
-    const t2 = document.getElementById('team2Summons');
-    if (!t1 || !t2) return;
-    t1.innerHTML = ''; t2.innerHTML = '';
-
+    const t1=document.getElementById('team1Summons');
+    const t2=document.getElementById('team2Summons');
+    if (!t1||!t2) return;
+    t1.innerHTML=''; t2.innerHTML='';
     for (const sid in gameState.summons) {
-        const s = gameState.summons[sid];
-        if (!s || s.hp <= 0) continue;
-        const container = s.team === 'team1' ? t1 : t2;
-        const hpPct = s.maxHp > 0 ? (s.hp / s.maxHp) * 100 : 0;
-
-        const div = document.createElement('div');
-        div.className = 'summon-card';
-        div.id = 'summon-' + sid;
-        div.innerHTML = (s.img ? '<img class="summon-img" src="' + s.img + '" alt="' + s.name + '" onerror="this.style.display=\'none\'">' : '<div class="summon-img" style="display:flex;align-items:center;justify-content:center;font-size:1rem;">🔮</div>') +
-            '<div style="flex:1;min-width:0;"><div class="summon-name">' + s.name + '</div><div style="font-size:.62rem;color:var(--text-secondary);">❤️ ' + s.hp + '/' + s.maxHp + '</div><div style="height:3px;background:rgba(0,0,0,0.3);border-radius:2px;margin-top:3px;overflow:hidden;"><div style="height:100%;width:' + hpPct + '%;background:rgba(139,92,246,0.7);border-radius:2px;transition:width .3s;"></div></div></div>';
+        const s=gameState.summons[sid];
+        if (!s||s.hp<=0) continue;
+        const container=s.team==='team1'?t1:t2;
+        const hpPct=s.maxHp>0?(s.hp/s.maxHp)*100:0;
+        const div=document.createElement('div');
+        div.className='summon-card'; div.id='summon-'+sid;
+        div.innerHTML='<span style="font-size:1.1rem;">🔮</span><div style="flex:1;min-width:0;">' +
+            '<div class="summon-name">'+s.name+'</div>' +
+            '<div style="font-size:.58rem;color:#8899bb;">❤️ '+s.hp+'/'+s.maxHp+'</div>' +
+            '<div style="height:3px;background:rgba(0,0,0,0.3);border-radius:2px;margin-top:2px;overflow:hidden;">' +
+            '<div style="height:100%;width:'+hpPct+'%;background:rgba(139,92,246,0.7);border-radius:2px;"></div></div></div>';
         container.appendChild(div);
     }
 }
 
-// ── SHOW ACTION MODAL ─────────────────────────────────────────
-
 function showActionModal() {
-    const name = gameState.selectedCharacter;
-    const char = gameState.characters[name];
-    if (!name || !char) return;
-
-    const modal = document.getElementById('actionModal');
+    const name=gameState.selectedCharacter;
+    const char=gameState.characters[name];
+    if (!name||!char) return;
+    const modal=document.getElementById('actionModal');
     if (!modal) return;
 
-    const rc = document.getElementById('roundCounter');
-    if (rc) rc.textContent = 'RONDA ' + (gameState.currentRound || 1);
+    const rc=document.getElementById('roundCounter');
+    if (rc) rc.textContent='RONDA '+(gameState.currentRound||1);
 
-    const portrait = getActivePortrait(name, char);
-    const imgEl = document.getElementById('actionPortraitImg');
-    const fallback = document.getElementById('actionPortraitFallback');
+    const portrait=getActivePortrait(name,char);
+    const imgEl=document.getElementById('actionPortraitImg');
+    const fallback=document.getElementById('actionPortraitFallback');
     if (imgEl) {
-        if (portrait) { imgEl.src = portrait; imgEl.style.display = ''; if (fallback) fallback.style.display = 'none'; }
-        else { imgEl.style.display = 'none'; if (fallback) fallback.style.display = 'flex'; }
+        if (portrait) {imgEl.src=portrait;imgEl.style.display='';if(fallback)fallback.style.display='none';}
+        else {imgEl.style.display='none';if(fallback)fallback.style.display='flex';}
     }
 
-    const titleEl = document.getElementById('actionModalTitle');
-    if (titleEl) titleEl.textContent = name;
+    const titleEl=document.getElementById('actionModalTitle');
+    if (titleEl) titleEl.textContent=name;
+    const hpEl=document.getElementById('actionHP');
+    if (hpEl) hpEl.textContent=char.hp+'/'+char.maxHp;
+    const chEl=document.getElementById('actionCharges');
+    if (chEl) chEl.textContent=char.charges||0;
+    const shEl=document.getElementById('actionShield');
+    const shVal=document.getElementById('actionShieldValue');
+    if (shEl&&shVal){if(char.shield>0){shEl.style.display='';shVal.textContent=char.shield;}else shEl.style.display='none';}
+    const passiveEl=document.getElementById('actionPassive');
+    if (passiveEl) passiveEl.innerHTML=char.passive?'<div style="font-size:.68rem;color:#a78bfa;font-family:Chakra Petch,sans-serif;">✨ '+char.passive.name+'</div>':'';
+    const levelEl=document.getElementById('actionLevel');
+    if (levelEl){const v2=typeof CHARACTERS_V2!=='undefined'?CHARACTERS_V2[char.baseName||name]:null;levelEl.textContent=v2?'Nv '+v2.level+' · '+v2.xp+'/'+(typeof XPSystem!=='undefined'?XPSystem.xpNeeded(v2.level):'?')+' XP':'';}
 
-    const hpEl = document.getElementById('actionHP');
-    if (hpEl) hpEl.textContent = char.hp + '/' + char.maxHp;
-
-    const chEl = document.getElementById('actionCharges');
-    if (chEl) chEl.textContent = char.charges || 0;
-
-    const shEl = document.getElementById('actionShield');
-    const shVal = document.getElementById('actionShieldValue');
-    if (shEl && shVal) {
-        if (char.shield > 0) { shEl.style.display = ''; shVal.textContent = char.shield; }
-        else shEl.style.display = 'none';
+    const statusEl=document.getElementById('actionStatusEffects');
+    if (statusEl) {
+        const pills=(char.statusEffects||[]).filter(function(e){return e&&!e.passiveHidden;}).slice(0,4)
+            .map(function(e){const isBuff=e.type==='buff';const bg=isBuff?'rgba(16,185,129,0.2)':'rgba(239,68,68,0.15)';const col=isBuff?'#6ee7b7':'#fca5a5';const dur=e.permanent?'':(e.duration>0?' ('+e.duration+'T)':'');return '<span style="font-size:.6rem;padding:1px 5px;border-radius:3px;background:'+bg+';color:'+col+';">'+(e.emoji||'')+' '+(e.name||'')+dur+'</span>';}).join('');
+        statusEl.innerHTML=pills;
     }
 
-    const passiveEl = document.getElementById('actionPassive');
-    if (passiveEl) {
-        passiveEl.innerHTML = char.passive
-            ? '<div style="font-size:.68rem;color:#a78bfa;font-family:Chakra Petch,sans-serif;letter-spacing:.04em;">✨ ' + char.passive.name + '</div>'
-            : '';
-    }
-
-    const statusEl = document.getElementById('actionStatusEffects');
-    if (statusEl) statusEl.innerHTML = _renderStatusPills(char);
-
-    const abilitiesEl = document.getElementById('actionAbilities');
+    const abilitiesEl=document.getElementById('actionAbilities');
     if (abilitiesEl) {
-        abilitiesEl.innerHTML = '';
-        (char.abilities || []).forEach(function(ab, idx) {
-            let cost = ab.cost || 0;
-            if (char.rikudoMode && ab.effect !== 'rikudo_mode_madara') cost = Math.ceil(cost / 2);
-            if (name === 'Sauron' && char.sauronTransformed && ab.type !== 'basic') cost = Math.max(0, cost - 3);
-
-            const canAfford = (char.charges || 0) >= cost;
-            const typeClass = ab.type === 'over' ? 'ability-btn-over' : ab.type === 'special' ? 'ability-btn-special' : 'ability-btn-basic';
-            const typeBadge = ab.type === 'over' ? 'badge-over' : ab.type === 'special' ? 'badge-violet' : 'badge-blue';
-
-            const btn = document.createElement('button');
-            btn.className = 'ability-btn ' + typeClass;
-            btn.disabled = !canAfford;
-            (function(i) { btn.onclick = function() { selectAbility(name, i); }; })(idx);
-
-            btn.innerHTML = '<div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;"><div class="ability-btn-name">' + (ab.name || '') + '</div><span class="badge ' + typeBadge + '" style="flex-shrink:0;font-size:.65rem;">' + (ab.type || '').toUpperCase() + '</span></div><div class="ability-btn-desc">' + (ab.description || '') + '</div></div><div class="ability-btn-cost">' + (cost > 0 ? '💎 ' + cost : '🆓') + '</div>';
+        abilitiesEl.innerHTML='';
+        (char.abilities||[]).forEach(function(ab,idx){
+            let cost=ab.cost||0;
+            if (char.rikudoMode) cost=Math.ceil(cost/2);
+            const canAfford=(char.charges||0)>=cost;
+            const typeClass=ab.type==='over'?'ability-btn-over':ab.type==='special'?'ability-btn-special':'ability-btn-basic';
+            const typeBadge=ab.type==='over'?'badge-over':ab.type==='special'?'badge-violet':'badge-blue';
+            const btn=document.createElement('button');
+            btn.className='ability-btn '+typeClass;
+            btn.disabled=!canAfford;
+            (function(i){btn.onclick=function(){selectAbility(name,i);};})(idx);
+            btn.innerHTML='<div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;"><div class="ability-btn-name">'+(ab.name||'')+'</div><span class="badge '+typeBadge+'" style="flex-shrink:0;font-size:.6rem;">'+(ab.type||'').toUpperCase()+'</span></div><div class="ability-btn-desc">'+(ab.description||'')+'</div></div><div class="ability-btn-cost">'+(cost>0?'💎 '+cost:'🆓')+'</div>';
             abilitiesEl.appendChild(btn);
         });
     }
@@ -500,246 +401,75 @@ function showActionModal() {
     modal.classList.add('show');
 }
 
-// ── OVER CINEMATIC ────────────────────────────────────────────
-
-function _showOverCinematic(charName, abilityName, effect, team, callback) {
-    const overlay = document.createElement('div');
-    overlay.className = 'over-cinematic';
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:3000;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.92);backdrop-filter:blur(8px);';
-    overlay.innerHTML = '<div style="font-family:Bebas Neue,sans-serif;font-size:clamp(2rem,8vw,5rem);color:var(--plasma-gold);letter-spacing:.15em;text-shadow:0 0 40px rgba(245,158,11,0.6);text-align:center;">' + charName + '</div><div style="font-family:Chakra Petch,sans-serif;font-size:clamp(1rem,3vw,1.8rem);color:var(--text-secondary);letter-spacing:.3em;text-transform:uppercase;margin-top:1rem;">' + abilityName + '</div>';
-    document.body.appendChild(overlay);
-    setTimeout(function() {
-        overlay.style.opacity = '0';
-        overlay.style.transition = 'opacity 0.4s ease';
-        setTimeout(function() { overlay.remove(); if (callback) callback(); }, 450);
-    }, 1200);
-}
-
-// ── CARD ANIMATION ────────────────────────────────────────────
-
-function _animCard(charName, animClass, durationMs) {
-    const el = document.getElementById('char-' + (charName || '').replace(/\s+/g, '-'));
+function _animCard(charName,animClass,durationMs) {
+    const el=document.getElementById('char-'+(charName||'').replace(/\s+/g,'-'));
     if (!el) return;
     el.classList.add(animClass);
-    setTimeout(function() { el.classList.remove(animClass); }, durationMs || 500);
+    setTimeout(function(){el.classList.remove(animClass);},durationMs||500);
 }
 
-// ── GAME OVER ─────────────────────────────────────────────────
-
 function checkGameOver() {
-    const alive1 = Object.keys(gameState.characters).filter(function(n) { const c = gameState.characters[n]; return c && c.team === 'team1' && !c.isDead && c.hp > 0; });
-    const alive2 = Object.keys(gameState.characters).filter(function(n) { const c = gameState.characters[n]; return c && c.team === 'team2' && !c.isDead && c.hp > 0; });
-
-    if (alive1.length === 0 || alive2.length === 0) {
-        gameState.gameOver = true;
-        const winner = alive1.length > 0 ? 'team1' : 'team2';
-        gameState.winner = winner;
-
-        const modal = document.getElementById('gameOverModal');
-        const title = document.getElementById('gameOverText');
-        if (modal && title) {
-            const winnerName = winner === 'team1'
-                ? ((window._teamNames && window._teamNames.team1) || 'HUNTERS')
-                : ((window._teamNames && window._teamNames.team2) || 'REAPERS');
-            title.textContent = '🏆 ' + winnerName.toUpperCase();
-            title.style.color = winner === 'team1' ? 'var(--team1)' : 'var(--team2)';
-            modal.classList.add('show');
-        }
-
-        if (gameState.gameMode === 'online') {
-            const revBtn = document.getElementById('revanchaBtn');
-            if (revBtn) revBtn.style.display = 'inline-flex';
-        }
-
-        audioManager.stop();
-        if (typeof onGameOver === 'function') onGameOver(winner);
+    const a1=Object.keys(gameState.characters).filter(function(n){const c=gameState.characters[n];return c&&c.team==='team1'&&!c.isDead&&c.hp>0;});
+    const a2=Object.keys(gameState.characters).filter(function(n){const c=gameState.characters[n];return c&&c.team==='team2'&&!c.isDead&&c.hp>0;});
+    if (a1.length===0||a2.length===0) {
+        if (!gameState.gameOver){gameState.gameOver=true;gameState.winner=a1.length>0?'team1':'team2';if(typeof onGameOver==='function')onGameOver(gameState.winner);}
         return true;
     }
     return false;
 }
 
-function goToMainMenu() {
-    const modal = document.getElementById('gameOverModal');
-    if (modal) modal.classList.remove('show');
-    document.querySelector('.game-container').style.display = 'none';
-    hideContinueButton();
-    if (typeof showLobby === 'function') showLobby();
-    else { document.getElementById('lobbyScreen').style.display = 'flex'; }
-    audioManager.stop();
-    audioManager.play('audioMenu');
-}
-
-// ── SHOW CHAR INFO PANEL ──────────────────────────────────────
-
-function showCharInfo(charName) {
-    const char = gameState.characters[charName];
-    if (!char) return;
-    const panel = document.getElementById('charInfoPanel');
-    const content = document.getElementById('charInfoContent');
-    if (!panel || !content) return;
-
-    const portrait = getActivePortrait(charName, char);
-    const hpPct = char.maxHp > 0 ? (char.hp / char.maxHp) * 100 : 0;
-    const hpClass = hpPct > 60 ? '' : hpPct > 30 ? 'hp-medium' : 'hp-critical';
-
-    content.innerHTML =
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">' +
-            '<div style="font-family:Bebas Neue,sans-serif;font-size:1.6rem;color:var(--text-white);letter-spacing:.06em;">' + charName + '</div>' +
-            '<button onclick="document.getElementById(\'charInfoPanel\').style.display=\'none\'" class="btn btn-ghost btn-sm btn-icon">✕</button>' +
-        '</div>' +
-        '<div style="display:flex;gap:14px;margin-bottom:14px;">' +
-            (portrait ? '<img src="' + portrait + '" style="width:80px;height:80px;object-fit:cover;border-radius:var(--radius-md);border:2px solid var(--border-medium);flex-shrink:0;" onerror="this.style.display=\'none\'">' : '<div style="width:80px;height:80px;background:var(--bg-surface);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0;">⚔️</div>') +
-            '<div style="flex:1;">' +
-                '<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">' +
-                    '<span class="badge badge-blue">⚡ ' + (char.speed || 0) + '</span>' +
-                    '<span class="badge ' + (char.team === 'team1' ? 'badge-blue' : 'badge-red') + '">' + ((window._teamNames && window._teamNames[char.team]) || char.team) + '</span>' +
-                '</div>' +
-                '<div class="char-hp-text">❤️ ' + char.hp + '/' + char.maxHp + ' HP' + (char.shield > 0 ? ' 🛡️' + char.shield : '') + '</div>' +
-                '<div class="hp-bar-wrap" style="margin-top:4px;"><div class="hp-bar ' + hpClass + '" style="width:' + hpPct + '%;"></div></div>' +
-                '<div class="char-hp-text" style="margin-top:4px;">⚡ ' + (char.charges || 0) + '/20 cargas</div>' +
-            '</div>' +
-        '</div>' +
-        (char.passive ?
-            '<div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);border-radius:var(--radius-md);padding:10px 12px;margin-bottom:10px;">' +
-                '<div style="font-family:Chakra Petch,sans-serif;font-size:.72rem;font-weight:700;color:#a78bfa;margin-bottom:4px;letter-spacing:.06em;">✨ PASIVA: ' + char.passive.name + '</div>' +
-                '<div style="font-size:.72rem;color:var(--text-secondary);line-height:1.5;">' + char.passive.description + '</div>' +
-            '</div>' : '');
-
-    panel.style.display = 'flex';
-}
-
-// ── BUFF/DEBUFF GUIDE ─────────────────────────────────────────
-
-function showBuffDebuffGuide() {
-    const modal = document.getElementById('buffDebuffModal');
-    const content = document.getElementById('buffDebuffContent');
-    if (!modal || !content) return;
-
-    const entries = [
-        { name:'Furia', type:'buff', emoji:'🔥', desc:'+50% de daño en todos los ataques.' },
-        { name:'Frenesí', type:'buff', emoji:'⚡', desc:'50% de probabilidad de crítico (daño doble) en cada ataque.' },
-        { name:'Concentración', type:'buff', emoji:'🔮', desc:'Duplica la generación de cargas.' },
-        { name:'Regeneración', type:'buff', emoji:'💖', desc:'Recupera % del HP máximo al inicio de cada turno.' },
-        { name:'Escudo', type:'buff', emoji:'🛡️', desc:'Absorbe daño antes que el HP.' },
-        { name:'Esquiva Área', type:'buff', emoji:'🌟', desc:'Inmune a daño AOE y efectos de área.' },
-        { name:'Sigilo', type:'buff', emoji:'👻', desc:'No puede ser seleccionado por ataques ST enemigos.' },
-        { name:'Provocación', type:'buff', emoji:'🛡️', desc:'Fuerza a los enemigos a atacar al portador.' },
-        { name:'Contraataque', type:'buff', emoji:'⚔️', desc:'Responde automáticamente a los ataques recibidos.' },
-        { name:'Aturdimiento', type:'debuff', emoji:'💫', desc:'No puede actuar en su turno.' },
-        { name:'Congelación', type:'debuff', emoji:'🧊', desc:'No puede actuar. Se rompe al recibir daño.' },
-        { name:'Quemadura', type:'debuff', emoji:'🔥', desc:'Pierde HP al inicio de cada turno.' },
-        { name:'Quemadura Solar', type:'debuff', emoji:'☀️', desc:'Bloquea toda recuperación de HP. Daño por turno.' },
-        { name:'Veneno', type:'debuff', emoji:'☠️', desc:'Pierde HP al inicio de cada turno.' },
-        { name:'Posesión', type:'debuff', emoji:'👁️', desc:'Sus cargas se transfieren al rival al usar habilidades.' },
-        { name:'Confusión', type:'debuff', emoji:'🌀', desc:'50% de probabilidad de atacar a un aliado aleatorio.' },
-        { name:'Miedo', type:'debuff', emoji:'😱', desc:'Sus ataques hacen -50% de daño.' },
-        { name:'Silenciar', type:'debuff', emoji:'🔇', desc:'No puede usar habilidades de cierto tipo.' },
-        { name:'Sangrado', type:'debuff', emoji:'🩸', desc:'Pierde HP fijo al inicio de cada turno.' },
-    ];
-
-    content.innerHTML = entries.map(function(e) {
-        const isBuff = e.type === 'buff';
-        const borderColor = isBuff ? 'rgba(59,130,246,0.3)' : 'rgba(239,68,68,0.25)';
-        const titleColor = isBuff ? '#93c5fd' : '#fca5a5';
-        return '<div style="background:rgba(255,255,255,0.03);border:1px solid ' + borderColor + ';border-radius:var(--radius-md);padding:10px 12px;">' +
-            '<div style="font-family:Chakra Petch,sans-serif;font-size:.75rem;font-weight:700;color:' + titleColor + ';margin-bottom:4px;">' + e.emoji + ' ' + e.name + '</div>' +
-            '<div style="font-size:.7rem;color:var(--text-secondary);line-height:1.5;">' + e.desc + '</div>' +
-            '</div>';
-    }).join('');
-
-    modal.style.display = 'block';
-}
-
-// ── APPLY DAMAGE WITH SHIELD ──────────────────────────────────
-
-function applyDamageWithShield(targetName, damage, attackerName) {
-    const target = gameState.characters[targetName];
-    if (!target || target.isDead || target.hp <= 0) return 0;
-
-    let actualDamage = damage;
-    let shieldAbsorbed = 0;
-
-    if (target.shield > 0) {
-        shieldAbsorbed = Math.min(target.shield, actualDamage);
-        target.shield -= shieldAbsorbed;
-        actualDamage -= shieldAbsorbed;
-        if (target.shield <= 0) { target.shield = 0; target.shieldEffect = null; }
-    }
-
-    if (actualDamage > 0) {
-        target.hp = Math.max(0, target.hp - actualDamage);
-        addLog('💥 ' + targetName + ' recibe ' + actualDamage + ' de daño' + (shieldAbsorbed > 0 ? ' (escudo absorbió ' + shieldAbsorbed + ')' : ''), 'damage');
-
-        if (gameState.battleStats && attackerName) {
-            gameState.battleStats.damageDone = gameState.battleStats.damageDone || {};
-            gameState.battleStats.damageDone[attackerName] = (gameState.battleStats.damageDone[attackerName] || 0) + actualDamage;
-            if (target.team === 'team2') gameState.battleStats.team1Damage += actualDamage;
-            else gameState.battleStats.team2Damage += actualDamage;
-        }
-
-        if (target.hp <= 0) {
-            target.hp = 0;
-            target.isDead = true;
-            addLog('💀 ' + targetName + ' ha sido eliminado', 'damage');
-            if (typeof onCharacterDeath === 'function') onCharacterDeath(targetName, attackerName);
-        }
-        _animCard(targetName, 'anim-damage', 400);
-    } else if (shieldAbsorbed > 0) {
-        addLog('🛡️ El escudo de ' + targetName + ' absorbe ' + shieldAbsorbed + ' de daño', 'buff');
-    }
-
-    if (typeof renderCharacters === 'function') renderCharacters();
+function applyDamageWithShield(targetName,damage,attackerName) {
+    const target=gameState.characters[targetName];
+    if (!target||target.isDead||target.hp<=0) return 0;
+    let actualDamage=damage; let shieldAbsorbed=0;
+    if (target.shield>0){shieldAbsorbed=Math.min(target.shield,actualDamage);target.shield-=shieldAbsorbed;actualDamage-=shieldAbsorbed;if(target.shield<=0){target.shield=0;target.shieldEffect=null;}}
+    if (actualDamage>0) {
+        target.hp=Math.max(0,target.hp-actualDamage);
+        addLog('💥 '+targetName+' recibe '+actualDamage+' de daño'+(shieldAbsorbed>0?' (🛡️'+shieldAbsorbed+' absorbido)':''),'damage');
+        if (gameState.battleStats&&attackerName){gameState.battleStats.damageDone=gameState.battleStats.damageDone||{};gameState.battleStats.damageDone[attackerName]=(gameState.battleStats.damageDone[attackerName]||0)+actualDamage;if(target.team==='team2')gameState.battleStats.team1Damage+=actualDamage;else gameState.battleStats.team2Damage+=actualDamage;}
+        if (target.hp<=0){target.hp=0;target.isDead=true;addLog('💀 '+targetName+' eliminado','damage');if(typeof onCharacterDeath==='function')onCharacterDeath(targetName,attackerName);}
+        _animCard(targetName,'anim-damage',400);
+    } else if (shieldAbsorbed>0) { addLog('🛡️ '+targetName+': escudo absorbe '+shieldAbsorbed,'buff'); }
+    if (typeof renderCharacters==='function') renderCharacters();
     return actualDamage;
 }
 
-// ── BUFF / DEBUFF HELPERS ─────────────────────────────────────
-
-function applyBuff(targetName, buffData) {
-    const target = gameState.characters[targetName];
-    if (!target) return;
-    if (!target.statusEffects) target.statusEffects = [];
-    target.statusEffects = target.statusEffects.filter(function(e) { return !e || e.name !== buffData.name || e.permanent; });
-    target.statusEffects.push(Object.assign({}, buffData));
-    if (typeof renderCharacters === 'function') renderCharacters();
+function applyBuff(targetName,buffData) {
+    const target=gameState.characters[targetName];if(!target)return;
+    if(!target.statusEffects)target.statusEffects=[];
+    target.statusEffects=target.statusEffects.filter(function(e){return!e||e.name!==buffData.name||e.permanent;});
+    target.statusEffects.push(Object.assign({},buffData));
+    if(typeof renderCharacters==='function')renderCharacters();
 }
-
-function applyDebuff(targetName, debuffData) {
-    const target = gameState.characters[targetName];
-    if (!target || target.isDead) return;
-    if (!target.statusEffects) target.statusEffects = [];
-    if (debuffData.name === 'Miedo' && target.immuneToMiedo) { addLog('🌟 ' + targetName + ' es inmune a Miedo', 'buff'); return; }
-    if ((debuffData.name === 'Confusión' || debuffData.name === 'Confusion') && target.immuneToConfusion) { addLog('🌟 ' + targetName + ' es inmune a Confusión', 'buff'); return; }
-    target.statusEffects.push(Object.assign({}, debuffData));
-    if (typeof triggerIzanamiPartB === 'function') triggerIzanamiPartB(targetName);
-    if (typeof renderCharacters === 'function') renderCharacters();
+function applyDebuff(targetName,debuffData) {
+    const target=gameState.characters[targetName];if(!target||target.isDead)return;
+    if(!target.statusEffects)target.statusEffects=[];
+    if(debuffData.name==='Miedo'&&target.immuneToMiedo){addLog('🌟 '+targetName+' inmune a Miedo','buff');return;}
+    if((debuffData.name==='Confusión'||debuffData.name==='Confusion')&&target.immuneToConfusion){addLog('🌟 '+targetName+' inmune a Confusión','buff');return;}
+    target.statusEffects.push(Object.assign({},debuffData));
+    if(typeof triggerIzanamiPartB==='function')triggerIzanamiPartB(targetName);
+    if(typeof renderCharacters==='function')renderCharacters();
 }
-
-function hasStatusEffect(charName, effectName) {
-    const char = gameState.characters[charName];
-    if (!char || !char.statusEffects) return false;
-    return char.statusEffects.some(function(e) { return e && normAccent(e.name || '') === normAccent(effectName); });
+function hasStatusEffect(charName,effectName) {
+    const char=gameState.characters[charName];if(!char||!char.statusEffects)return false;
+    return char.statusEffects.some(function(e){return e&&normAccent(e.name||'')===normAccent(effectName);});
 }
-
 function canHeal(charName) {
-    const char = gameState.characters[charName];
-    if (!char) return false;
-    return !(char.statusEffects || []).some(function(e) { return e && normAccent(e.name || '') === 'quemadura solar'; });
+    const char=gameState.characters[charName];if(!char)return false;
+    return!(char.statusEffects||[]).some(function(e){return e&&normAccent(e.name||'')==='quemadura solar';});
+}
+function applySummonDamage(summonId,damage,attackerName) {
+    const s=gameState.summons[summonId];if(!s||s.hp<=0)return 0;
+    s.hp=Math.max(0,s.hp-damage);
+    addLog('💥 '+s.name+' -'+damage+' HP','damage');
+    if(s.hp<=0){addLog('💀 '+s.name+' eliminado','damage');if(gameState.battleStats)gameState.battleStats.summonsKilled++;if(typeof onSummonDeath==='function')onSummonDeath(summonId,s,attackerName);}
+    renderSummons(); return damage;
 }
 
-// ── APPLY SUMMON DAMAGE ───────────────────────────────────────
+function updateCurrentTurnDisplay(){_updateCurrentTurnDisplay();}
+function highlightActiveCharacter(){}
+function renderTurnOrder(){}
+function showBuffDebuffGuide(){}
+function showCharInfo(){}
 
-function applySummonDamage(summonId, damage, attackerName) {
-    const s = gameState.summons[summonId];
-    if (!s || s.hp <= 0) return 0;
-    s.hp = Math.max(0, s.hp - damage);
-    addLog('💥 ' + s.name + ' (invocación) recibe ' + damage + ' de daño', 'damage');
-    if (s.hp <= 0) {
-        addLog('💀 ' + s.name + ' ha sido eliminado', 'damage');
-        if (gameState.battleStats) gameState.battleStats.summonsKilled++;
-        if (typeof onSummonDeath === 'function') onSummonDeath(summonId, s, attackerName);
-    }
-    renderSummons();
-    return damage;
-}
-
-console.log('[UNIVERSUS] init-render.js v2.1 cargado ✓');
+console.log('[UNIVERSUS] init-render.js v3.0 — cartas clickeables ✓');
