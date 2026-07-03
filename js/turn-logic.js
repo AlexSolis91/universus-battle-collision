@@ -224,11 +224,7 @@
         }
 
         function showTurnConfirmModal() {
-            // Ya no se usa para inicio de turno — solo queda como helper interno
-            const modal = document.getElementById('turnConfirmModal');
-            document.getElementById('turnConfirmRound').textContent = `⏱️ RONDA ${gameState.currentRound}`;
-            document.getElementById('turnConfirmChar').textContent = `🎯 ${gameState.selectedCharacter}`;
-            modal.classList.add('show');
+            // No se usa en UNIVERSUS v2 — elementos eliminados del HTML
         }
 
         function showContinueButton() {
@@ -567,7 +563,7 @@
 
             hideContinueButton();
             // Ocultar el modal de turno si por alguna razón estuviera visible
-            document.getElementById('turnConfirmModal').classList.remove('show');
+            const _tcm=document.getElementById('turnConfirmModal');if(_tcm)_tcm.classList.remove('show');
 
             const charName = gameState.selectedCharacter;
             const char = gameState.characters[charName];
@@ -766,12 +762,12 @@
 
 
         function closeBattleStatus() {
-            document.getElementById('battleStatusModal').classList.remove('show');
+            const _bsm=document.getElementById('battleStatusModal');if(_bsm)_bsm.classList.remove('show');
         }
 
         function showBattleStatus() {
             // Cerrar modal de confirmación
-            document.getElementById('turnConfirmModal').classList.remove('show');
+            const _tcm=document.getElementById('turnConfirmModal');if(_tcm)_tcm.classList.remove('show');
             
             // Actualizar información del modal de estado
             const modal = document.getElementById('battleStatusModal');
