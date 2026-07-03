@@ -166,42 +166,29 @@ function renderCharacters() {
 
         const glowColor=char.team==='team1'?'#00d4ff':'#ff6644';
 
-        let boxShadow='0 2px 14px rgba(0,0,0,0.6)';
-        let transform='none';
-        let borderColor='rgba(255,255,255,0.08)';
-        if (isActive&&!isDead) {
-            boxShadow='0 0 0 3px '+glowColor+', 0 0 24px '+glowColor+'55';
-            transform='translateY(-5px) scale(1.04)';
-            borderColor=glowColor;
-        }
-
-        card.style.cssText=[
-            'position:relative','border-radius:14px','overflow:hidden',
-            'border:2px solid '+borderColor,
-            'cursor:'+(isClickable?'pointer':'default'),
-            'transition:transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s',
-            'opacity:'+(isDead?'0.3':'1'),
-            'filter:'+(isDead?'grayscale(1) brightness(0.5)':'none'),
-            'pointer-events:'+(isDead?'none':'all'),
-            'background:#080d1a',
-            'box-shadow:'+boxShadow,
-            'transform:'+transform,
-            'flex-shrink:0',
-        ].join(';');
+        // Use new card classes from index.html CSS
+        let cardClass='char-card-v3';
+        if (isDead) cardClass+=' dead';
+        else if (isActive && isPlayer) cardClass+=' active-player';
+        else if (isActive && !isPlayer) cardClass+=' active-ai';
+        card.className=cardClass;
 
         // Portrait area (top 72% of card)
         const imgArea=document.createElement('div');
-        imgArea.style.cssText='position:relative;width:100%;padding-bottom:115%;overflow:hidden;background:linear-gradient(180deg,#0d1428 0%,#030508 100%);';
+        imgArea.className='card-portrait-wrap';
+        imgArea.style.cssText='position:relative;';
 
         if (portrait) {
             const img=document.createElement('img');
             img.src=portrait; img.alt=name; img.loading='eager'; img.referrerPolicy='no-referrer';
-            img.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;';
+            img.className='card-portrait';
+            img.style.cssText='';
             img.onerror=function(){this.style.display='none';};
             imgArea.appendChild(img);
         } else {
             const ph=document.createElement('div');
-            ph.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:3rem;';
+            ph.className='card-portrait-placeholder';
+            ph.style.cssText='';
             ph.textContent='⚔️';
             imgArea.appendChild(ph);
         }
@@ -220,7 +207,7 @@ function renderCharacters() {
         // Active turn indicator - top left
         if (isActive&&!isDead) {
             const ind=document.createElement('div');
-            ind.style.cssText='position:absolute;top:6px;left:6px;font-family:Chakra Petch,sans-serif;font-size:.5rem;font-weight:700;color:'+glowColor+';background:rgba(0,0,0,0.8);border:1px solid '+glowColor+';border-radius:4px;padding:2px 5px;letter-spacing:.06em;z-index:5;';
+            ind.className='card-turn-badge '+(isPlayer?'player':'ai');
             ind.textContent=isPlayer?'▶ TURNO':'🤖 IA';
             imgArea.appendChild(ind);
         }
@@ -287,7 +274,8 @@ function renderCharacters() {
                 const col=isBuff?'#6ee7b7':'#fca5a5';
                 const dur=e.permanent?'':(e.duration>0?' '+e.duration:'');
                 const span=document.createElement('span');
-                span.style.cssText='font-size:.48rem;padding:1px 4px;border-radius:3px;background:'+bg+';color:'+col+';white-space:nowrap;';
+                span.className='card-pill '+(e.type==='buff'?'pill-buff':'pill-debuff');
+                span.style.cssText='';
                 span.textContent=(e.emoji||'')+' '+(e.name||'')+dur;
                 pillsDiv.appendChild(span);
             });

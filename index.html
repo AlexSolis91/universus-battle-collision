@@ -7,12 +7,268 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/universus.css">
+  <style>
+    /* ── LAYOUT TIPO YUGIOH ─── */
+    body { background:#04060f; color:#e8edf5; margin:0; overflow:hidden; height:100vh; }
+
+    #startScreen {
+      position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;background:#04060f;gap:2.5rem;
+    }
+
+    /* Contenedor principal de batalla */
+    .battle-screen {
+      display:none;
+      height:100vh;
+      flex-direction:row;
+      overflow:hidden;
+    }
+
+    /* Campo de juego — ocupa todo menos el log */
+    .battle-field {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+
+    /* Header de la partida */
+    .battle-header {
+      display:flex;align-items:center;justify-content:space-between;
+      padding:8px 16px;
+      background:rgba(7,11,26,0.95);
+      border-bottom:1px solid rgba(0,212,255,0.1);
+      flex-shrink:0;
+      z-index:10;
+    }
+    .battle-title {
+      font-family:'Bebas Neue',sans-serif;font-size:1.4rem;
+      color:#00d4ff;letter-spacing:.1em;
+      text-shadow:0 0 16px rgba(0,212,255,0.4);
+    }
+    .battle-round {
+      font-family:'Chakra Petch',sans-serif;font-size:.72rem;
+      color:#445577;letter-spacing:.15em;
+    }
+    .battle-turn-display {
+      font-family:'Chakra Petch',sans-serif;font-size:.82rem;
+      font-weight:700;color:#00d4ff;letter-spacing:.06em;
+      padding:5px 14px;
+      background:rgba(0,212,255,0.07);
+      border:1px solid rgba(0,212,255,0.2);
+      border-radius:20px;
+    }
+
+    /* Zona equipo 2 — ARRIBA */
+    .zone-enemy {
+      flex:1;
+      display:flex;
+      align-items:flex-start;
+      padding:12px 16px 8px;
+      background:linear-gradient(180deg,rgba(255,102,68,0.04) 0%,transparent 100%);
+      border-bottom:1px solid rgba(255,102,68,0.12);
+      overflow:hidden;
+      gap:10px;
+      min-height:0;
+    }
+    .zone-enemy-label {
+      font-family:'Chakra Petch',sans-serif;font-size:.68rem;font-weight:700;
+      color:#ff6644;letter-spacing:.12em;text-transform:uppercase;
+      writing-mode:vertical-rl;text-orientation:mixed;
+      transform:rotate(180deg);
+      flex-shrink:0;align-self:center;opacity:.7;
+    }
+    .enemy-cards {
+      display:flex;flex-direction:row;gap:10px;flex-wrap:nowrap;
+      align-items:flex-start;overflow-x:auto;padding-bottom:4px;
+      flex:1;
+    }
+
+    /* Divisor central — muestra quién tiene el turno */
+    .battle-divider {
+      display:flex;align-items:center;justify-content:center;
+      padding:6px 16px;
+      background:rgba(4,6,15,0.8);
+      flex-shrink:0;
+      gap:12px;
+    }
+    .divider-line {
+      flex:1;height:1px;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent);
+    }
+
+    /* Zona equipo 1 — ABAJO */
+    .zone-player {
+      flex:1;
+      display:flex;
+      align-items:flex-end;
+      padding:8px 16px 14px;
+      background:linear-gradient(0deg,rgba(0,212,255,0.05) 0%,transparent 100%);
+      border-top:1px solid rgba(0,212,255,0.12);
+      overflow:hidden;
+      gap:10px;
+      min-height:0;
+    }
+    .zone-player-label {
+      font-family:'Chakra Petch',sans-serif;font-size:.68rem;font-weight:700;
+      color:#00d4ff;letter-spacing:.12em;text-transform:uppercase;
+      writing-mode:vertical-rl;text-orientation:mixed;
+      flex-shrink:0;align-self:center;opacity:.7;
+    }
+    .player-cards {
+      display:flex;flex-direction:row;gap:10px;flex-wrap:nowrap;
+      align-items:flex-end;overflow-x:auto;padding-top:4px;
+      flex:1;
+    }
+
+    /* Cartas individuales */
+    .char-card-v3 {
+      flex-shrink:0;
+      width:130px;
+      border-radius:12px;
+      overflow:hidden;
+      background:#080d1a;
+      border:2px solid rgba(255,255,255,0.08);
+      transition:transform .2s ease, box-shadow .2s ease, border-color .2s;
+      cursor:default;
+      position:relative;
+    }
+    .char-card-v3.active-player {
+      border-color:#00d4ff;
+      box-shadow:0 0 0 2px #00d4ff, 0 0 28px rgba(0,212,255,0.5);
+      transform:translateY(-8px) scale(1.05);
+      cursor:pointer;
+    }
+    .char-card-v3.active-ai {
+      border-color:#ff6644;
+      box-shadow:0 0 0 2px #ff6644, 0 0 28px rgba(255,102,68,0.4);
+      transform:translateY(8px) scale(1.05);
+    }
+    .char-card-v3.dead {
+      opacity:.25;filter:grayscale(1) brightness(0.4);pointer-events:none;
+    }
+
+    /* Portrait de carta */
+    .card-portrait {
+      width:100%;aspect-ratio:3/4;object-fit:cover;object-position:top center;
+      display:block;
+    }
+    .card-portrait-placeholder {
+      width:100%;aspect-ratio:3/4;
+      display:flex;align-items:center;justify-content:center;
+      font-size:2.5rem;
+      background:linear-gradient(180deg,#0d1428,#030508);
+    }
+    .card-portrait-wrap {
+      position:relative;overflow:hidden;
+    }
+    .card-portrait-wrap::after {
+      content:'';position:absolute;bottom:0;left:0;right:0;height:40%;
+      background:linear-gradient(0deg,rgba(4,6,15,.98) 0%,transparent 100%);
+      pointer-events:none;
+    }
+
+    /* Badge nivel */
+    .card-level {
+      position:absolute;top:5px;right:7px;
+      font-family:'Chakra Petch',sans-serif;font-size:.82rem;font-weight:700;
+      color:#ffd700;
+      text-shadow:0 0 8px rgba(255,215,0,.9),0 1px 3px rgba(0,0,0,1);
+      z-index:5;line-height:1;
+    }
+
+    /* Badge turno activo */
+    .card-turn-badge {
+      position:absolute;top:5px;left:5px;
+      font-family:'Chakra Petch',sans-serif;font-size:.48rem;font-weight:700;
+      border-radius:4px;padding:2px 5px;letter-spacing:.06em;z-index:5;
+      animation:pulse-active 1s ease-in-out infinite;
+    }
+    .card-turn-badge.player { color:#00d4ff;background:rgba(0,0,0,.82);border:1px solid #00d4ff; }
+    .card-turn-badge.ai { color:#ff6644;background:rgba(0,0,0,.82);border:1px solid #ff6644; }
+
+    /* Nombre en la carta */
+    .card-name {
+      position:absolute;bottom:6px;left:5px;right:5px;
+      font-family:'Chakra Petch',sans-serif;font-size:.58rem;font-weight:700;
+      color:#fff;text-shadow:0 1px 3px rgba(0,0,0,1);
+      z-index:5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+
+    /* Stats panel */
+    .card-stats {
+      padding:5px 6px;background:#080d1a;
+    }
+    .card-bar-row { margin-bottom:3px; }
+    .card-bar-label {
+      font-family:'Chakra Petch',sans-serif;font-size:.48rem;
+      display:flex;justify-content:space-between;color:#888;margin-bottom:1px;
+    }
+    .card-bar-wrap {
+      height:5px;background:rgba(0,0,0,.5);border-radius:3px;overflow:hidden;
+    }
+    .card-bar-fill { height:100%;border-radius:3px;transition:width .4s; }
+    .bar-hp-high { background:#10b981; }
+    .bar-hp-mid  { background:#f59e0b; }
+    .bar-hp-low  { background:#ef4444; }
+    .bar-charges { background:#f59e0b; }
+    .bar-xp      { background:#4fc3f7;height:3px; }
+
+    .card-pills {
+      display:flex;flex-wrap:wrap;gap:2px;margin-top:3px;
+    }
+    .card-pill {
+      font-size:.42rem;padding:1px 3px;border-radius:3px;white-space:nowrap;
+    }
+    .pill-buff  { background:rgba(16,185,129,.22);color:#6ee7b7; }
+    .pill-debuff{ background:rgba(239,68,68,.22);color:#fca5a5; }
+
+    /* Panel de log — lado derecho */
+    .battle-log-panel {
+      width:260px;flex-shrink:0;
+      display:flex;flex-direction:column;
+      background:rgba(7,11,26,.97);
+      border-left:1px solid rgba(0,212,255,.1);
+      overflow:hidden;
+    }
+    .log-panel-header {
+      padding:10px 14px;
+      border-bottom:1px solid rgba(0,212,255,.1);
+      font-family:'Chakra Petch',sans-serif;font-size:.7rem;
+      color:#00d4ff;letter-spacing:.15em;text-transform:uppercase;
+      flex-shrink:0;
+    }
+    .log-panel-content {
+      flex:1;overflow-y:auto;padding:8px;
+      display:flex;flex-direction:column;gap:2px;
+    }
+
+    /* Summons */
+    .zone-summons {
+      display:flex;gap:6px;padding:0 16px;flex-wrap:wrap;flex-shrink:0;
+    }
+
+    @keyframes pulse-active {
+      0%,100%{opacity:1}50%{opacity:.55}
+    }
+
+    /* Modals */
+    .action-modal.show { display:flex; }
+    .target-selection-modal.show { display:flex; }
+
+    /* Game over */
+    #gameOverModal { display:none; }
+    #gameOverModal.show { display:flex; }
+    #learnMoveModal { display:none; }
+    #learnMoveModal.show { display:flex; }
+  </style>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
+<!-- AUDIOS -->
 <audio id="audioBattle1" loop preload="auto"><source src="audio/Naruto-%20Kouen%20%5BCrimson%20Flames%5D%20Extended.mp3" type="audio/mpeg"></audio>
 <audio id="audioBattle2" loop preload="auto"><source src="https://AlejandroSolis.publit.io/file/Super-Buu-Theme-FULL.mp3" type="audio/mpeg"></audio>
 <audio id="audioBattle3" loop preload="auto"><source src="https://AlejandroSolis.publit.io/file/Sasukes-Theme-Kokuten-Naruto-Shippuden-Cover-Epic-Version.mp3" type="audio/mpeg"></audio>
@@ -20,24 +276,75 @@
 <audio id="audioTransformSfx" preload="auto"><source src="https://alejandrosolis.publit.io/file/Dragon-Ball-Super-SSJ-God-Transformation-Burst-Sound-Effect-Free-Ringtone-Download.mp3" type="audio/mpeg"></audio>
 <audio id="audioOverSfx" preload="auto"><source src="https://alejandrosolis.publit.io/file/Final-Smash-Attack-Cinematic-Death-Background-SFX-4K-Super-Smash-Bros.Ultimate.mp3" type="audio/mpeg"></audio>
 
-<!-- INICIO -->
-<div id="startScreen" style="position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#04060f;gap:2.5rem;">
+<!-- ═══ PANTALLA DE INICIO ═══ -->
+<div id="startScreen">
   <div style="text-align:center;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:clamp(3.5rem,10vw,6rem);color:#fff;letter-spacing:.12em;line-height:1;text-shadow:0 0 60px rgba(0,212,255,0.35);">UNIVERSUS</div>
     <div style="font-family:'Chakra Petch',sans-serif;font-size:clamp(.75rem,2vw,1rem);color:#00d4ff;letter-spacing:.45em;text-transform:uppercase;margin-top:.4rem;">Battle Collision</div>
-    <div style="font-family:'Chakra Petch',sans-serif;font-size:.65rem;color:#334;letter-spacing:.2em;margin-top:.5rem;">v1.0 — ALPHA</div>
+    <div style="font-family:'Chakra Petch',sans-serif;font-size:.65rem;color:#223;letter-spacing:.2em;margin-top:.5rem;">v1.0 — ALPHA</div>
   </div>
-  <button onclick="startTestBattle()" style="font-family:'Chakra Petch',sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#00d4ff;background:rgba(0,212,255,0.08);border:2px solid rgba(0,212,255,0.4);border-radius:50px;padding:18px 56px;cursor:pointer;transition:all .25s ease;" onmouseover="this.style.background='rgba(0,212,255,0.18)';this.style.borderColor='#00d4ff';this.style.boxShadow='0 0 30px rgba(0,212,255,0.3)';" onmouseout="this.style.background='rgba(0,212,255,0.08)';this.style.borderColor='rgba(0,212,255,0.4)';this.style.boxShadow='none';">⚔ PRUEBAS</button>
-  <div style="font-family:'Chakra Petch',sans-serif;font-size:.7rem;color:#334;letter-spacing:.1em;text-align:center;">Inicia una batalla 5v5 con los 10 personajes disponibles</div>
+  <button onclick="startTestBattle()" style="font-family:'Chakra Petch',sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#00d4ff;background:rgba(0,212,255,0.08);border:2px solid rgba(0,212,255,0.4);border-radius:50px;padding:18px 56px;cursor:pointer;transition:all .25s;" onmouseover="this.style.background='rgba(0,212,255,0.18)';this.style.borderColor='#00d4ff';this.style.boxShadow='0 0 30px rgba(0,212,255,0.3)';" onmouseout="this.style.background='rgba(0,212,255,0.08)';this.style.borderColor='rgba(0,212,255,0.4)';this.style.boxShadow='none';">⚔ PRUEBAS</button>
+  <div style="font-family:'Chakra Petch',sans-serif;font-size:.7rem;color:#223;letter-spacing:.1em;text-align:center;">Inicia una batalla 5v5 con los 10 personajes disponibles</div>
 </div>
 
-<!-- MODAL APRENDER MOVIMIENTO -->
-<div id="learnMoveModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.88);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem;">
+<!-- ═══ BATALLA ═══ -->
+<div class="battle-screen" id="battleScreen">
+
+  <!-- Campo izquierdo + centro -->
+  <div class="battle-field">
+
+    <!-- Header -->
+    <div class="battle-header">
+      <div class="battle-title">⚔ UNIVERSUS</div>
+      <div id="currentTurnDisplay" class="battle-turn-display">Calculando...</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div id="roundDisplayHeader" class="battle-round">RONDA 1</div>
+        <button onclick="toggleAudio()" style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:6px;color:#00d4ff;padding:5px 10px;cursor:pointer;font-size:.85rem;">🔊</button>
+      </div>
+    </div>
+
+    <!-- ZONA ENEMIGO (arriba) -->
+    <div class="zone-enemy">
+      <div class="zone-enemy-label" id="teamHeader2">REAPERS</div>
+      <div class="enemy-cards" id="team2Characters"></div>
+    </div>
+
+    <!-- Divisor -->
+    <div class="battle-divider">
+      <div class="divider-line"></div>
+      <div style="font-family:'Chakra Petch',sans-serif;font-size:.62rem;color:#334;letter-spacing:.2em;text-transform:uppercase;white-space:nowrap;">— CAMPO DE BATALLA —</div>
+      <div class="divider-line"></div>
+    </div>
+
+    <!-- Summons zona enemiga -->
+    <div class="zone-summons" id="team2Summons" style="justify-content:flex-start;padding:4px 16px;"></div>
+
+    <!-- Summons zona aliada -->
+    <div class="zone-summons" id="team1Summons" style="justify-content:flex-start;padding:4px 16px;"></div>
+
+    <!-- ZONA JUGADOR (abajo) -->
+    <div class="zone-player">
+      <div class="zone-player-label" id="teamHeader1">HUNTERS</div>
+      <div class="player-cards" id="team1Characters"></div>
+    </div>
+
+  </div>
+
+  <!-- Battle Log — derecha -->
+  <div class="battle-log-panel">
+    <div class="log-panel-header">📜 Battle Log</div>
+    <div class="log-panel-content" id="battleLogContent"></div>
+  </div>
+
+</div>
+
+<!-- ═══ MODAL APRENDER MOVIMIENTO ═══ -->
+<div id="learnMoveModal" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.88);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem;">
   <div id="learnMoveContent" style="background:#111c35;border:1px solid rgba(0,212,255,0.3);border-radius:16px;padding:1.5rem;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;"></div>
 </div>
 
-<!-- GAME OVER -->
-<div id="gameOverModal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
+<!-- ═══ GAME OVER ═══ -->
+<div id="gameOverModal" style="position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
   <div style="text-align:center;padding:2.5rem 3rem;background:#0d1428;border:1px solid rgba(0,212,255,0.25);border-radius:20px;max-width:600px;width:90%;">
     <div id="gameOverText" style="font-family:'Bebas Neue',sans-serif;font-size:3.5rem;color:#00d4ff;letter-spacing:.1em;margin-bottom:1rem;">VICTORIA</div>
     <div id="gameOverXP" style="font-family:'Chakra Petch',sans-serif;font-size:.8rem;color:#8899bb;margin-bottom:1.5rem;line-height:1.8;"></div>
@@ -45,44 +352,12 @@
   </div>
 </div>
 
-<!-- ARENA DE BATALLA -->
-<div class="game-container" style="display:none;">
-  <div class="game-header">
-    <div class="game-title">⚔ UNIVERSUS</div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <div id="roundDisplayHeader" style="font-family:'Chakra Petch',sans-serif;font-size:.72rem;color:#445577;letter-spacing:.15em;">RONDA 1</div>
-      <button onclick="toggleAudio()" style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:6px;color:#00d4ff;padding:5px 10px;cursor:pointer;">🔊</button>
-    </div>
-  </div>
-  <div class="battle-arena">
-    <div class="team-column">
-      <div id="teamHeader1" style="font-family:'Chakra Petch',sans-serif;font-size:.75rem;font-weight:700;color:#00d4ff;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">🔷 EQUIPO 1</div>
-      <div id="team1Characters"></div>
-      <div id="team1Summons"></div>
-    </div>
-    <div class="center-column">
-      <div style="background:#111c35;border:1px solid rgba(0,212,255,0.1);border-radius:12px;padding:14px;margin-bottom:10px;text-align:center;">
-        <div id="currentTurnDisplay" style="font-family:'Chakra Petch',sans-serif;font-size:.85rem;font-weight:700;color:#00d4ff;">Calculando...</div>
-      </div>
-      <div class="battle-log">
-        <div class="battle-log-title">📜 Battle Log</div>
-        <div id="battleLogContent"></div>
-      </div>
-    </div>
-    <div class="team-column">
-      <div id="teamHeader2" style="font-family:'Chakra Petch',sans-serif;font-size:.75rem;font-weight:700;color:#ff6644;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">🔶 EQUIPO 2</div>
-      <div id="team2Characters"></div>
-      <div id="team2Summons"></div>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL ACCIÓN -->
+<!-- ═══ MODAL ACCIÓN ═══ -->
 <div class="action-modal" id="actionModal">
   <div class="action-modal-content">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
       <div id="roundCounter" style="font-family:'Chakra Petch',sans-serif;font-size:.7rem;color:#445577;letter-spacing:.15em;">RONDA 1</div>
-      <button onclick="closeActionModal()" class="btn btn-ghost btn-sm">← Batalla</button>
+      <button onclick="closeActionModal()" class="btn btn-ghost btn-sm">✕ Cerrar</button>
     </div>
     <div class="action-modal-hero">
       <div class="action-modal-portrait-wrap">
@@ -93,7 +368,7 @@
         <div id="actionModalTitle" class="action-modal-title">Personaje</div>
         <div class="action-modal-stats">
           <div class="action-stat">❤️ <span id="actionHP">—</span></div>
-          <div class="action-stat">⚡ <span id="actionCharges">0</span> cargas</div>
+          <div class="action-stat">⚡ <span id="actionCharges">0</span></div>
           <div class="action-stat" id="actionShield" style="display:none;">🛡️ <span id="actionShieldValue">0</span></div>
         </div>
         <div id="actionPassive" style="margin-top:4px;"></div>
@@ -113,40 +388,29 @@
   </div>
 </div>
 
-<!-- PANEL INFO PERSONAJE -->
+<!-- PANEL INFO -->
 <div id="charInfoPanel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:995;justify-content:center;align-items:center;padding:1rem;">
   <div id="charInfoContent" style="background:#111c35;border:1px solid rgba(0,212,255,0.25);border-radius:16px;max-width:420px;width:100%;max-height:85vh;overflow-y:auto;padding:1.2rem;"></div>
 </div>
 
-
+<!-- ═══ SCRIPTS ═══ -->
 <script>
-// Firebase init
-const firebaseConfig = {
-  apiKey:"AIzaSyDEmZy1nOVG2EwJyNSVn-trkfUmgk8vdBc",
-  authDomain:"overstrike-game.firebaseapp.com",
-  databaseURL:"https://overstrike-game-default-rtdb.firebaseio.com",
-  projectId:"overstrike-game",
-  storageBucket:"overstrike-game.firebasestorage.app",
-  messagingSenderId:"574667817498",
-  appId:"1:574667817498:web:d3b46b30c5e6c53e54e71a"
-};
-if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const firebaseConfig={apiKey:"AIzaSyDEmZy1nOVG2EwJyNSVn-trkfUmgk8vdBc",authDomain:"overstrike-game.firebaseapp.com",databaseURL:"https://overstrike-game-default-rtdb.firebaseio.com",projectId:"overstrike-game",storageBucket:"overstrike-game.firebasestorage.app",messagingSenderId:"574667817498",appId:"1:574667817498:web:d3b46b30c5e6c53e54e71a"};
+if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
-// Audio Manager
 const audioManager={
   _muted:false,_current:null,
-  play:function(id){if(this._muted)return;var el=document.getElementById(id);if(el){el.currentTime=0;el.volume=0.35;el.play().catch(function(){});this._current=el;}},
+  play:function(id){if(this._muted)return;const el=document.getElementById(id);if(el){el.currentTime=0;el.volume=0.35;el.play().catch(function(){});this._current=el;}},
   stop:function(){if(this._current){this._current.pause();this._current.currentTime=0;}},
   toggleMute:function(){this._muted=!this._muted;document.querySelectorAll('audio').forEach(function(a){a.muted=audioManager._muted;});},
-  playSelect:function(){var el=document.getElementById('audioSelect');if(el&&!this._muted){el.currentTime=0;el.volume=0.5;el.play().catch(function(){});}},
+  playSelect:function(){const el=document.getElementById('audioSelect');if(el&&!this._muted){el.currentTime=0;el.volume=0.5;el.play().catch(function(){});}},
   playTransformSfx:function(){this.play('audioTransformSfx');},
   playOverSfx:function(){this.play('audioOverSfx');},
-  playRandomBattle:function(){var t=['audioBattle1','audioBattle2','audioBattle3'];this.play(t[Math.floor(Math.random()*t.length)]);}
+  playRandomBattle:function(){const t=['audioBattle1','audioBattle2','audioBattle3'];this.play(t[Math.floor(Math.random()*t.length)]);}
 };
 function toggleAudio(){audioManager.toggleMute();}
 
-// Game State global
 const gameState={
   characters:{},summons:{},turnOrder:[],currentTurnIndex:0,
   currentRound:1,turnsInRound:0,aliveCountAtRoundStart:0,
@@ -158,8 +422,6 @@ const gameState={
   battleLog:[],
   battleStats:{team1Damage:0,team2Damage:0,crits:0,damageDone:{},poisonAppliers:new Set(),burnAppliers:new Set()},
 };
-
-// Globals requeridos por turn-logic.js
 const onlineMode=false,isRoomHost=false;
 let currentUser=null;
 
@@ -178,149 +440,108 @@ function checkAndRedirectAOEMegaProv(){return false;}
 function invokeSummon(){}
 function applyArmadura(n,d){applyBuff(n,{name:'Armadura',type:'buff',duration:d||2,emoji:'🛡️'});}
 
-// Core helpers
-function hasStatusEffect(n,eff){
-  var c=gameState.characters[n];
-  if(!c||!c.statusEffects)return false;
-  return c.statusEffects.some(function(e){return e&&normAccent(e.name||'')===normAccent(eff);});
-}
-function applyBuff(n,data){
-  var c=gameState.characters[n];if(!c)return;
-  if(!c.statusEffects)c.statusEffects=[];
-  c.statusEffects=c.statusEffects.filter(function(e){return!e||e.name!==data.name||e.permanent;});
-  c.statusEffects.push(Object.assign({},data));
-  if(typeof renderCharacters==='function')renderCharacters();
-}
-function applyDebuff(n,data){
-  var c=gameState.characters[n];if(!c||c.isDead)return;
-  if(!c.statusEffects)c.statusEffects=[];
-  if(data.name==='Miedo'&&c.immuneToMiedo){addLog('🌟 '+n+' inmune a Miedo','buff');return;}
-  if((data.name==='Confusion'||data.name==='Confusión')&&c.immuneToConfusion){addLog('🌟 '+n+' inmune a Confusión','buff');return;}
-  c.statusEffects.push(Object.assign({},data));
-  if(typeof renderCharacters==='function')renderCharacters();
-}
-function canHeal(n){
-  var c=gameState.characters[n];if(!c)return false;
-  return!(c.statusEffects||[]).some(function(e){return e&&normAccent(e.name||'')==='quemadura solar';});
-}
-function applyHeal(n,amount){
-  var c=gameState.characters[n];if(!c||c.isDead)return;
-  if(!canHeal(n)){addLog('🚫 '+n+' bloqueado por Quemadura Solar','info');return;}
-  var before=c.hp;
-  c.hp=Math.min(c.maxHp,(c.hp||0)+amount);
-  if(c.hp>before)addLog('💖 '+n+' recupera '+(c.hp-before)+' HP','heal');
-  if(typeof renderCharacters==='function')renderCharacters();
-}
-function applyFlatBurn(n,v,d){applyDebuff(n,{name:'Quemadura',type:'debuff',duration:d||2,flatHp:v,emoji:'🔥'});addLog('🔥 '+n+' Quemadura '+v+'HP '+d+'T','debuff');}
-function applyBurn(n,p,d){applyDebuff(n,{name:'Quemadura',type:'debuff',duration:d||2,percent:p,emoji:'🔥'});addLog('🔥 '+n+' Quemadura '+p+'% '+d+'T','debuff');}
+function hasStatusEffect(n,eff){const c=gameState.characters[n];if(!c||!c.statusEffects)return false;return c.statusEffects.some(function(e){return e&&normAccent(e.name||'')===normAccent(eff);});}
+function applyBuff(n,data){const c=gameState.characters[n];if(!c)return;if(!c.statusEffects)c.statusEffects=[];c.statusEffects=c.statusEffects.filter(function(e){return!e||e.name!==data.name||e.permanent;});c.statusEffects.push(Object.assign({},data));if(typeof renderCharacters==='function')renderCharacters();}
+function applyDebuff(n,data){const c=gameState.characters[n];if(!c||c.isDead)return;if(!c.statusEffects)c.statusEffects=[];if(data.name==='Miedo'&&c.immuneToMiedo){addLog('🌟 '+n+' inmune a Miedo','buff');return;}if((data.name==='Confusion'||data.name==='Confusión')&&c.immuneToConfusion){addLog('🌟 '+n+' inmune','buff');return;}c.statusEffects.push(Object.assign({},data));if(typeof triggerIzanamiPartB==='function')triggerIzanamiPartB(n);if(typeof renderCharacters==='function')renderCharacters();}
+function canHeal(n){const c=gameState.characters[n];if(!c)return false;return!(c.statusEffects||[]).some(function(e){return e&&normAccent(e.name||'')==='quemadura solar';});}
+function applyHeal(n,amount){const c=gameState.characters[n];if(!c||c.isDead)return;if(!canHeal(n)){addLog('🚫 '+n+' bloqueado por Q.Solar','info');return;}const b=c.hp;c.hp=Math.min(c.maxHp,(c.hp||0)+amount);if(c.hp>b)addLog('💖 '+n+' recupera '+(c.hp-b)+' HP','heal');if(typeof renderCharacters==='function')renderCharacters();}
+function applyFlatBurn(n,v,d){applyDebuff(n,{name:'Quemadura',type:'debuff',duration:d||2,flatHp:v,emoji:'🔥'});addLog('🔥 '+n+' Quemadura '+v+'HP','debuff');}
+function applyBurn(n,p,d){applyDebuff(n,{name:'Quemadura',type:'debuff',duration:d||2,percent:p,emoji:'🔥'});addLog('🔥 '+n+' Quemadura '+p+'%','debuff');}
 function applySolarBurn(n,p,d){applyDebuff(n,{name:'Quemadura Solar',type:'debuff',duration:d||999,percent:p||5,emoji:'☀️'});addLog('☀️ '+n+' Quemadura Solar','debuff');}
-function applyPoison(n,v,d){applyDebuff(n,{name:'Veneno',type:'debuff',duration:d||2,flatHp:v,emoji:'☠️'});addLog('☠️ '+n+' Veneno '+v+'HP '+d+'T','debuff');}
+function applyPoison(n,v,d){applyDebuff(n,{name:'Veneno',type:'debuff',duration:d||2,flatHp:v,emoji:'☠️'});addLog('☠️ '+n+' Veneno '+v+'HP','debuff');}
 function applyFreeze(n,d){applyDebuff(n,{name:'Congelacion',type:'debuff',duration:d||2,emoji:'🧊'});addLog('🧊 '+n+' Congelado','debuff');}
 function applyMegaFreeze(n,d){applyDebuff(n,{name:'Mega Congelacion',type:'debuff',duration:d||2,emoji:'🧊'});addLog('🧊 '+n+' Mega Congelado','debuff');}
-function applyFear(n,d){applyDebuff(n,{name:'Miedo',type:'debuff',duration:d||2,emoji:'😱'});addLog('😱 '+n+' tiene Miedo','debuff');}
+function applyFear(n,d){applyDebuff(n,{name:'Miedo',type:'debuff',duration:d||2,emoji:'😱'});addLog('😱 '+n+' Miedo','debuff');}
 function applyPossession(n){applyDebuff(n,{name:'Posesion',type:'debuff',duration:2,emoji:'👁️'});addLog('👁️ '+n+' Poseído','debuff');}
 function applyConfusion(n,d){applyDebuff(n,{name:'Confusion',type:'debuff',duration:d||2,emoji:'🌀'});addLog('🌀 '+n+' Confundido','debuff');}
 
 function processRegenerationEffects(n){
-  var c=gameState.characters[n];if(!c||c.isDead)return;
+  const c=gameState.characters[n];if(!c||c.isDead)return;
   (c.statusEffects||[]).forEach(function(e){
-    if(!e)return;
-    var nm=normAccent(e.name||'');
-    if(nm==='regeneracion'){if(canHeal(n)){var a=e.percent?Math.ceil(c.maxHp*e.percent/100):(e.flatHp||2);applyHeal(n,a);}}
-    if(nm==='quemadura'){var d=e.percent?Math.ceil(c.maxHp*e.percent/100):(e.flatHp||1);c.hp=Math.max(0,c.hp-d);addLog('🔥 '+n+' -'+d+' HP por Quemadura','damage');if(c.hp<=0){c.isDead=true;addLog('💀 '+n+' eliminado por Quemadura','damage');if(typeof onCharacterDeath==='function')onCharacterDeath(n,'Quemadura');}}
-    if(nm==='quemadura solar'){var d2=e.percent?Math.ceil(c.maxHp*e.percent/100):(e.flatHp||1);c.hp=Math.max(0,c.hp-d2);addLog('☀️ '+n+' -'+d2+' HP por Q.Solar','debuff');if(c.hp<=0){c.isDead=true;addLog('💀 '+n+' eliminado','damage');if(typeof onCharacterDeath==='function')onCharacterDeath(n,'Q.Solar');}}
-    if(nm==='veneno'){var d3=e.flatHp||2;c.hp=Math.max(0,c.hp-d3);addLog('☠️ '+n+' -'+d3+' HP por Veneno','damage');if(c.hp<=0){c.isDead=true;if(typeof onCharacterDeath==='function')onCharacterDeath(n,'Veneno');}}
-    if(nm==='sangrado'){var d4=e.flatHp||1;c.hp=Math.max(0,c.hp-d4);addLog('🩸 '+n+' -'+d4+' HP por Sangrado','damage');if(c.hp<=0){c.isDead=true;if(typeof onCharacterDeath==='function')onCharacterDeath(n,'Sangrado');}}
+    if(!e)return;const nm=normAccent(e.name||'');
+    if(nm==='regeneracion'){if(canHeal(n)){const a=e.percent?Math.ceil(c.maxHp*e.percent/100):(e.flatHp||2);applyHeal(n,a);}}
+    function _dotDmg(label,dmg){c.hp=Math.max(0,c.hp-dmg);addLog(label+n+' -'+dmg+' HP','damage');if(c.hp<=0){c.isDead=true;if(typeof onCharacterDeath==='function')onCharacterDeath(n,label);}}
+    if(nm==='quemadura'){const d=e.percent?Math.ceil(c.maxHp*e.percent/100):(e.flatHp||1);_dotDmg('🔥 ',d);}
+    if(nm==='quemadura solar'){const d2=e.percent?Math.ceil(c.maxHp*e.percent/100):(e.flatHp||1);_dotDmg('☀️ ',d2);}
+    if(nm==='veneno'){_dotDmg('☠️ ',e.flatHp||2);}
+    if(nm==='sangrado'){_dotDmg('🩸 ',e.flatHp||1);}
   });
   if(typeof renderCharacters==='function')renderCharacters();
 }
 function processNewDebuffEffects(n){processRegenerationEffects(n);}
 function updateStatusEffectDurations(n){
-  var c=gameState.characters[n];if(!c||!c.statusEffects)return;
+  const c=gameState.characters[n];if(!c||!c.statusEffects)return;
   c.statusEffects=c.statusEffects.filter(function(e){if(!e||e.permanent)return true;e.duration=(e.duration||1)-1;return e.duration>0;});
   if(typeof renderCharacters==='function')renderCharacters();
 }
-function onCharacterDeath(n,killer){
-  addLog('💀 '+n+' eliminado'+(killer?' por '+killer:''),'damage');
-  if(typeof renderCharacters==='function')renderCharacters();
-  if(typeof checkGameOver==='function')checkGameOver();
-}
+function onCharacterDeath(n,killer){addLog('💀 '+n+' eliminado'+(killer?' por '+killer:''),'damage');if(typeof renderCharacters==='function')renderCharacters();if(typeof checkGameOver==='function')checkGameOver();}
 function onSummonDeath(){}
 function onGameOver(w){setTimeout(function(){_showGameOver(w);},800);}
 
 function checkGameOver(){
-  var a1=Object.keys(gameState.characters).filter(function(n){var c=gameState.characters[n];return c&&c.team==='team1'&&!c.isDead&&c.hp>0;});
-  var a2=Object.keys(gameState.characters).filter(function(n){var c=gameState.characters[n];return c&&c.team==='team2'&&!c.isDead&&c.hp>0;});
-  if(a1.length===0||a2.length===0){
-    if(!gameState.gameOver){gameState.gameOver=true;gameState.winner=a1.length>0?'team1':'team2';if(typeof onGameOver==='function')onGameOver(gameState.winner);}
-    return true;
-  }
+  const a1=Object.keys(gameState.characters).filter(function(n){const c=gameState.characters[n];return c&&c.team==='team1'&&!c.isDead&&c.hp>0;});
+  const a2=Object.keys(gameState.characters).filter(function(n){const c=gameState.characters[n];return c&&c.team==='team2'&&!c.isDead&&c.hp>0;});
+  if(a1.length===0||a2.length===0){if(!gameState.gameOver){gameState.gameOver=true;gameState.winner=a1.length>0?'team1':'team2';if(typeof onGameOver==='function')onGameOver(gameState.winner);}return true;}
   return false;
 }
 
 function _showGameOver(w){
-  var modal=document.getElementById('gameOverModal');
-  var title=document.getElementById('gameOverText');
-  var xpDiv=document.getElementById('gameOverXP');
+  const modal=document.getElementById('gameOverModal');const title=document.getElementById('gameOverText');const xpDiv=document.getElementById('gameOverXP');
   if(!modal)return;
-  title.textContent=w==='team1'?'🏆 VICTORIA — EQUIPO 1':'🏆 VICTORIA — EQUIPO 2';
+  title.textContent=w==='team1'?'🏆 VICTORIA — HUNTERS':'🏆 VICTORIA — REAPERS';
   title.style.color=w==='team1'?'#00d4ff':'#ff6644';
-  var kills1=Object.keys(gameState.characters).filter(function(n){var c=gameState.characters[n];return c&&c.team==='team2'&&c.isDead;}).length;
-  var kills2=Object.keys(gameState.characters).filter(function(n){var c=gameState.characters[n];return c&&c.team==='team1'&&c.isDead;}).length;
-  var xpLines=[];
+  const k1=Object.keys(gameState.characters).filter(function(n){const c=gameState.characters[n];return c&&c.team==='team2'&&c.isDead;}).length;
+  const k2=Object.keys(gameState.characters).filter(function(n){const c=gameState.characters[n];return c&&c.team==='team1'&&c.isDead;}).length;
+  const lines=[];
   Object.keys(gameState.characters).forEach(function(n){
-    var c=gameState.characters[n];if(!c)return;
-    var isW=(c.team===w);var kx=c.team==='team1'?kills1:kills2;
-    var xp=XPSystem.calcBattleXP(isW,kx);
+    const c=gameState.characters[n];if(!c)return;
+    const isW=(c.team===w);const kx=c.team==='team1'?k1:k2;
+    const xp=XPSystem.calcBattleXP(isW,kx);
     XPSystem.giveXP(c.baseName||n,xp);
-    var v2=CHARACTERS_V2[c.baseName||n];
-    xpLines.push((c.baseName||n)+': +'+xp+' XP'+(v2?' → Nv '+v2.level:''));
+    const v2=CHARACTERS_V2[c.baseName||n];
+    lines.push((c.baseName||n)+': +'+xp+' XP'+(v2?' → Nv '+v2.level:''));
   });
-  xpDiv.innerHTML='<b style="color:#e8edf5">XP ganada:</b><br>'+xpLines.join('<br>');
-  modal.style.display='flex';
-  audioManager.stop();
+  xpDiv.innerHTML='<b style="color:#e8edf5">XP ganada:</b><br>'+lines.join('<br>');
+  modal.classList.add('show');audioManager.stop();
 }
 
-// IA simple
 function executeAITurn(name){
-  var c=gameState.characters[name];if(!c||c.isDead){endTurn();return;}
+  const c=gameState.characters[name];if(!c||c.isDead){endTurn();return;}
   setTimeout(function(){
-    var abs=c.abilities||[];var chosen=0;
-    for(var i=abs.length-1;i>=0;i--){if((c.charges||0)>=(abs[i].cost||0)){chosen=i;break;}}
+    const abs=c.abilities||[];let chosen=0;
+    for(let i=abs.length-1;i>=0;i--){if((c.charges||0)>=(abs[i].cost||0)){chosen=i;break;}}
     selectAbility(name,chosen);
   },900);
 }
 
-// Equipos de prueba
 var TEAM1=['Goku','Saitama','Rengoku','Madara Uchiha','Gandalf'];
 var TEAM2=['Lich King','Darth Vader','Superman','Ragnar Lothbrok','Muzan Kibutsuji'];
 
 function startTestBattle(){
   document.getElementById('startScreen').style.display='none';
-  document.querySelector('.game-container').style.display='block';
+  document.getElementById('battleScreen').style.display='flex';
   audioManager.playRandomBattle();
-  var chars={};
-  TEAM1.forEach(function(n){var v=CHARACTERS_V2[n];if(v)chars[n]=buildCharacterFromV2(n,v,'team1');});
-  TEAM2.forEach(function(n){var v=CHARACTERS_V2[n];if(v)chars[n]=buildCharacterFromV2(n,v,'team2');});
+  const chars={};
+  TEAM1.forEach(function(n){const v=CHARACTERS_V2[n];if(v)chars[n]=buildCharacterFromV2(n,v,'team1');});
+  TEAM2.forEach(function(n){const v=CHARACTERS_V2[n];if(v)chars[n]=buildCharacterFromV2(n,v,'team2');});
   initGame(chars);
-  addLog('⚔️ UNIVERSUS: Battle Collision — Batalla de Prueba iniciada','info');
-  addLog('🔷 Equipo 1: '+TEAM1.join(', '),'info');
-  addLog('🔶 Equipo 2: '+TEAM2.join(', '),'info');
+  addLog('⚔️ UNIVERSUS — Batalla de Prueba','info');
+  addLog('🔷 HUNTERS: '+TEAM1.join(', '),'info');
+  addLog('🔶 REAPERS: '+TEAM2.join(', '),'info');
 }
 
 // Modal aprender movimiento
 window.showLearnMoveModal=function(charName,newMoves,newPassives){
-  var modal=document.getElementById('learnMoveModal');
-  var content=document.getElementById('learnMoveContent');
-  var v2=CHARACTERS_V2[charName];if(!modal||!content||!v2)return;
-  var html='<div style="font-family:Chakra Petch,sans-serif;font-size:.7rem;color:#00d4ff;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;">⬆️ ¡'+charName+' subió de nivel!</div>';
+  const modal=document.getElementById('learnMoveModal');const content=document.getElementById('learnMoveContent');
+  const v2=CHARACTERS_V2[charName];if(!modal||!content||!v2)return;
+  let html='<div style="font-family:Chakra Petch,sans-serif;font-size:.7rem;color:#00d4ff;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;">⬆️ ¡'+charName+' subió de nivel!</div>';
   newMoves.forEach(function(m){
     html+='<div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:10px;padding:12px;margin-bottom:10px;">';
     html+='<div style="font-family:Chakra Petch,sans-serif;font-size:.82rem;font-weight:700;color:#e8edf5;margin-bottom:3px;">'+m.name+'</div>';
     html+='<div style="font-size:.73rem;color:#8899bb;margin-bottom:8px;">'+m.description+'</div>';
-    html+='<div style="font-size:.68rem;color:#445577;margin-bottom:8px;">Reemplazar un movimiento del pool:</div>';
+    html+='<div style="font-size:.65rem;color:#445577;margin-bottom:6px;">Reemplazar un movimiento:</div>';
     (v2.movePool||[]).forEach(function(pid,i){
-      var pm=(v2.moves||[]).find(function(x){return x.id===pid;});if(!pm)return;
+      const pm=(v2.moves||[]).find(function(x){return x.id===pid;});if(!pm)return;
       html+='<button onclick="confirmLearnMove(\''+charName+'\',\''+m.id+'\','+i+')" style="display:block;width:100%;text-align:left;padding:7px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#8899bb;font-size:.72rem;cursor:pointer;font-family:Chakra Petch,sans-serif;margin-bottom:4px;">Slot '+(i+1)+': '+pm.name+' → '+m.name+'</button>';
     });
     html+='<button onclick="skipLearnMove()" style="display:block;width:100%;padding:7px;background:rgba(255,51,102,0.06);border:1px solid rgba(255,51,102,0.2);border-radius:6px;color:#ff3366;font-size:.7rem;cursor:pointer;font-family:Chakra Petch,sans-serif;margin-top:4px;">✕ No aprender</button>';
@@ -330,30 +551,26 @@ window.showLearnMoveModal=function(charName,newMoves,newPassives){
     html+='<div style="background:rgba(139,92,246,0.07);border:1px solid rgba(139,92,246,0.2);border-radius:10px;padding:12px;margin-bottom:10px;">';
     html+='<div style="font-family:Chakra Petch,sans-serif;font-size:.82rem;font-weight:700;color:#a78bfa;margin-bottom:3px;">Pasiva: '+p.name+'</div>';
     html+='<div style="font-size:.73rem;color:#8899bb;margin-bottom:8px;">'+p.description+'</div>';
-    for(var s=0;s<3;s++){
-      var curId=(v2.passiveSlots||[])[s];
-      var curP=curId?(v2.passives||[]).find(function(x){return x.id===curId;}):null;
-      html+='<button onclick="confirmEquipPassive(\''+charName+'\',\''+p.id+'\','+s+')" style="display:block;width:100%;text-align:left;padding:7px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(139,92,246,0.2);border-radius:6px;color:#8899bb;font-size:.72rem;cursor:pointer;font-family:Chakra Petch,sans-serif;margin-bottom:4px;">Slot '+(s+1)+': '+(curP?curP.name:'Vacío')+' → '+p.name+'</button>';
-    }
+    for(let s=0;s<3;s++){const curId=(v2.passiveSlots||[])[s];const curP=curId?(v2.passives||[]).find(function(x){return x.id===curId;}):null;html+='<button onclick="confirmEquipPassive(\''+charName+'\',\''+p.id+'\','+s+')" style="display:block;width:100%;text-align:left;padding:7px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(139,92,246,0.2);border-radius:6px;color:#8899bb;font-size:.72rem;cursor:pointer;font-family:Chakra Petch,sans-serif;margin-bottom:4px;">Slot '+(s+1)+': '+(curP?curP.name:'Vacío')+' → '+p.name+'</button>';}
     html+='<button onclick="skipLearnMove()" style="display:block;width:100%;padding:7px;background:rgba(255,51,102,0.06);border:1px solid rgba(255,51,102,0.2);border-radius:6px;color:#ff3366;font-size:.7rem;cursor:pointer;font-family:Chakra Petch,sans-serif;margin-top:4px;">✕ No equipar</button>';
     html+='</div>';
   });
-  content.innerHTML=html;modal.style.display='flex';
+  content.innerHTML=html;modal.classList.add('show');
 };
-window.confirmLearnMove=function(name,mid,idx){XPSystem.learnMove(name,mid,idx);document.getElementById('learnMoveModal').style.display='none';addLog('📚 '+name+' aprendió un movimiento','buff');};
-window.confirmEquipPassive=function(name,pid,slot){XPSystem.equipPassive(name,pid,slot);document.getElementById('learnMoveModal').style.display='none';addLog('✨ '+name+' equipó una pasiva','buff');};
-window.skipLearnMove=function(){document.getElementById('learnMoveModal').style.display='none';};
+window.confirmLearnMove=function(name,mid,idx){XPSystem.learnMove(name,mid,idx);document.getElementById('learnMoveModal').classList.remove('show');addLog('📚 '+name+' aprendió un movimiento','buff');};
+window.confirmEquipPassive=function(name,pid,slot){XPSystem.equipPassive(name,pid,slot);document.getElementById('learnMoveModal').classList.remove('show');addLog('✨ '+name+' equipó una pasiva','buff');};
+window.skipLearnMove=function(){document.getElementById('learnMoveModal').classList.remove('show');};
 </script>
 
-<script src="js/skill-engine.js?v=20260703"></script>
-<script src="js/characters-v2.js?v=20260703"></script>
-<script src="js/init-render.js?v=20260703"></script>
-<script src="js/skills.js?v=20260703"></script>
-<script src="js/status-effects.js?v=20260703"></script>
-<script src="js/debuffs.js?v=20260703"></script>
-<script src="js/summons.js?v=20260703"></script>
-<script src="js/ability-select.js?v=20260703"></script>
-<script src="js/turn-logic.js?v=20260703"></script>
+<script src="js/skill-engine.js?v=20260703b"></script>
+<script src="js/characters-v2.js?v=20260703b"></script>
+<script src="js/init-render.js?v=20260703b"></script>
+<script src="js/skills.js?v=20260703b"></script>
+<script src="js/status-effects.js?v=20260703b"></script>
+<script src="js/debuffs.js?v=20260703b"></script>
+<script src="js/summons.js?v=20260703b"></script>
+<script src="js/ability-select.js?v=20260703b"></script>
+<script src="js/turn-logic.js?v=20260703b"></script>
 
 </body>
 </html>

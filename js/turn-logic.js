@@ -294,7 +294,7 @@
             if (!w) {
                 w = document.createElement('div');
                 w.id = 'waitingOpponentTurn';
-                w.style.cssText = 'position:fixed;bottom:28px;right:28px;background:rgba(10,14,23,0.92);border:2px solid rgba(255,68,102,0.5);color:#ff4466;font-family:'Chakra Petch',sans-serif;font-size:.85em;font-weight:700;padding:14px 26px;border-radius:50px;z-index:996;letter-spacing:.05em;box-shadow:0 0 20px rgba(255,68,102,0.3);pointer-events:none;';
+                w.style.cssText = 'position:fixed;bottom:28px;right:28px;background:rgba(10,14,23,0.92);border:2px solid rgba(255,68,102,0.5);color:#ff4466;font-family:Chakra Petch,sans-serif;font-size:.85em;font-weight:700;padding:14px 26px;border-radius:50px;z-index:996;letter-spacing:.05em;box-shadow:0 0 20px rgba(255,68,102,0.3);pointer-events:none;';
                 if (!document.getElementById('waitPulseStyle')) {
                     const st = document.createElement('style');
                     st.id = 'waitPulseStyle';
