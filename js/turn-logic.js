@@ -232,61 +232,23 @@
         }
 
         function showContinueButton() {
-            let btn = document.getElementById('floatingContinueBtn');
-            if (!btn) {
-                btn = document.createElement('button');
-                btn.id = 'floatingContinueBtn';
-                btn.innerHTML = '▶ Continuar Turno';
-                btn.style.cssText = [
-                    'position:fixed',
-                    'bottom:28px',
-                    'right:28px',
-                    'background:linear-gradient(135deg,#003a5c,#006688)',
-                    'border:none',
-                    'color:#00d4ff',
-                    "font-family:Chakra Petch,sans-serif",
-                    'font-size:1.1em',
-                    'font-weight:700',
-                    'padding:16px 32px',
-                    'border-radius:50px',
-                    'cursor:pointer',
-                    'z-index:996',
-                    'box-shadow:0 0 28px rgba(0,217,255,0.55)',
-                    'transition:all 0.2s ease',
-                    'letter-spacing:0.05em'
-                ].join(';');
-                btn.onmouseover = function() {
-                    this.style.transform = 'scale(1.07)';
-                    this.style.boxShadow = '0 0 44px rgba(0,217,255,0.85)';
-                };
-                btn.onmouseout = function() {
-                    this.style.transform = 'scale(1)';
-                    this.style.boxShadow = '0 0 28px rgba(0,217,255,0.55)';
-                };
-                btn.onclick = function() {
-                    hideContinueButton();
-                    continueTurn();
-                };
-                document.body.appendChild(btn);
-            }
-            // Actualizar texto con personaje y ronda
+            // UNIVERSUS v2 — sistema de cartas clickeables, sin botón flotante
             const charName = gameState.selectedCharacter || '';
-            btn.innerHTML = '▶ Continuar Turno<br><span style="font-size:0.65em;opacity:0.75;font-weight:400;">RONDA ' + gameState.currentRound + ' · ' + charName + '</span>';
+            const char = gameState.characters[charName];
+            if (!char) return;
 
-            // En modo online: mostrar botón solo si es el turno de MI equipo
-            if (onlineMode) {
-                const myTeam = isRoomHost ? 'team1' : 'team2';
-                const currentChar = gameState.characters[charName];
-                const charTeam = currentChar ? currentChar.team : null;
-                if (charTeam !== myTeam) {
-                    btn.style.display = 'none';
-                    updateWaitingIndicator(charName, true);
-                    return;
-                } else {
-                    updateWaitingIndicator(charName, false);
-                }
+            // Ocultar botón flotante si existiera
+            const oldBtn = document.getElementById('floatingContinueBtn');
+            if (oldBtn) oldBtn.style.display = 'none';
+
+            // Si es IA: ejecutar automáticamente
+            if (gameState.gameMode === 'solo' && char.team === gameState.aiTeam) {
+                setTimeout(function() { continueTurn(); }, 700);
+                return;
             }
-            btn.style.display = 'block';
+
+            // Si es jugador: re-renderizar para iluminar la carta activa
+            if (typeof renderCharacters === 'function') renderCharacters();
         }
 
         function updateWaitingIndicator(charName, visible) {
@@ -1059,7 +1021,7 @@
             });
         });
 
-        function showActionModal() {
+        function _legacyShowActionModal_UNUSED() {
             const char = gameState.characters[gameState.selectedCharacter];
             const modal = document.getElementById('actionModal');
             
