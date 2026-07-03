@@ -80,7 +80,7 @@
       flex-shrink:0;align-self:center;opacity:.7;
     }
     .enemy-cards {
-      display:flex;flex-direction:row;gap:16px;flex-wrap:nowrap;
+      display:flex !important;flex-direction:row;gap:16px;flex-wrap:nowrap;
       align-items:flex-start;overflow-x:auto;padding-bottom:4px;
       flex:1;
     }
@@ -118,12 +118,19 @@
       flex-shrink:0;align-self:center;opacity:.7;
     }
     .player-cards {
-      display:flex;flex-direction:row;gap:16px;flex-wrap:nowrap;
+      display:flex !important;flex-direction:row;gap:16px;flex-wrap:nowrap;
       align-items:flex-end;overflow-x:auto;padding-top:4px;
       flex:1;
     }
 
     /* Cartas individuales */
+    .enemy-cards, .player-cards {
+      display: flex !important;
+      flex-direction: row;
+      gap: 16px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
     .char-card-v3 {
       flex-shrink:0;
       width:200px;
@@ -629,15 +636,15 @@ window.confirmEquipPassive=function(name,pid,slot){XPSystem.equipPassive(name,pi
 window.skipLearnMove=function(){document.getElementById('learnMoveModal').classList.remove('show');};
 </script>
 
-<script src="js/skill-engine.js?v=20260708"></script>
-<script src="js/characters-v2.js?v=20260708"></script>
-<script src="js/init-render.js?v=20260708"></script>
-<script src="js/skills.js?v=20260708"></script>
-<script src="js/status-effects.js?v=20260708"></script>
-<script src="js/debuffs.js?v=20260708"></script>
-<script src="js/summons.js?v=20260708"></script>
-<script src="js/ability-select.js?v=20260708"></script>
-<script src="js/turn-logic.js?v=20260708"></script>
+<script src="js/skill-engine.js?v=20260709"></script>
+<script src="js/characters-v2.js?v=20260709"></script>
+<script src="js/init-render.js?v=20260709"></script>
+<script src="js/skills.js?v=20260709"></script>
+<script src="js/status-effects.js?v=20260709"></script>
+<script src="js/debuffs.js?v=20260709"></script>
+<script src="js/summons.js?v=20260709"></script>
+<script src="js/ability-select.js?v=20260709"></script>
+<script src="js/turn-logic.js?v=20260709"></script>
 
 </body>
 </html>
