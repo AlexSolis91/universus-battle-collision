@@ -1003,19 +1003,7 @@
             document.getElementById('charInfoPanel').style.display = 'none';
         }
 
-        // Cerrar panel al hacer click en el fondo
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('charInfoPanel').addEventListener('click', function(e) {
-                if (e.target === this) closeCharInfo();
-            });
-            // Event delegation para fichas de personaje en batalla
-            document.addEventListener('click', function(e) {
-                const card = e.target.closest('[data-charname]');
-                if (card && card.dataset.charname && !e.target.closest('.action-modal') && !e.target.closest('.turn-confirm-modal')) {
-                    showCharInfo(card.dataset.charname);
-                }
-            });
-        });
+        // charInfo panel removido — info de carta via hover en panel izquierdo
 
         function _legacyShowActionModal_UNUSED() {
             const char = gameState.characters[gameState.selectedCharacter];
