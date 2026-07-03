@@ -284,10 +284,16 @@ function renderCharacters() {
 
         card.appendChild(stats);
 
+        // Hover: mostrar info en panel izquierdo
+        card.onmouseenter = (function(n, c) {
+            return function() { showCardInfo(n, c); };
+        })(name, char);
+        card.onmouseleave = function() { hideCardInfo(); };
+
         // Click: solo si es la carta activa del jugador
         if (isClickable) {
-            card.onclick=function(){
-                if (typeof continueTurn==='function') continueTurn();
+            card.onclick = function() {
+                if (typeof continueTurn === 'function') continueTurn();
             };
         }
 
@@ -329,64 +335,136 @@ function renderSummons() {
     }
 }
 
+// showActionModal — ahora usa showMoveModal (diseño de carta)
 function showActionModal() {
-    const name=gameState.selectedCharacter;
-    const char=gameState.characters[name];
-    if (!name||!char) return;
-    const modal=document.getElementById('actionModal');
+    showMoveModal();
+}
+
+function showMoveModal() {
+    const name = gameState.selectedCharacter;
+    const char = gameState.characters[name];
+    if (!name || !char) return;
+
+    const modal = document.getElementById('moveModal');
     if (!modal) return;
 
-    const rc=document.getElementById('roundCounter');
-    if (rc) rc.textContent='RONDA '+(gameState.currentRound||1);
+    const portrait = getActivePortrait(name, char);
+    const v2 = typeof CHARACTERS_V2 !== 'undefined' ? CHARACTERS_V2[char.baseName || name] : null;
+    const charLevel = v2 ? v2.level : 1;
 
-    const portrait=getActivePortrait(name,char);
-    const imgEl=document.getElementById('actionPortraitImg');
-    const fallback=document.getElementById('actionPortraitFallback');
+    // Portrait
+    const imgEl = document.getElementById('moveModalPortrait');
+    const imgFb = document.getElementById('moveModalPortraitFb');
     if (imgEl) {
-        if (portrait) {imgEl.src=portrait;imgEl.style.display='';if(fallback)fallback.style.display='none';}
-        else {imgEl.style.display='none';if(fallback)fallback.style.display='flex';}
+        if (portrait) { imgEl.src = portrait; imgEl.style.display = 'block'; if (imgFb) imgFb.style.display = 'none'; }
+        else { imgEl.style.display = 'none'; if (imgFb) imgFb.style.display = 'flex'; }
     }
 
-    const titleEl=document.getElementById('actionModalTitle');
-    if (titleEl) titleEl.textContent=name;
-    const hpEl=document.getElementById('actionHP');
-    if (hpEl) hpEl.textContent=char.hp+'/'+char.maxHp;
-    const chEl=document.getElementById('actionCharges');
-    if (chEl) chEl.textContent=char.charges||0;
-    const shEl=document.getElementById('actionShield');
-    const shVal=document.getElementById('actionShieldValue');
-    if (shEl&&shVal){if(char.shield>0){shEl.style.display='';shVal.textContent=char.shield;}else shEl.style.display='none';}
-    const passiveEl=document.getElementById('actionPassive');
-    if (passiveEl) passiveEl.innerHTML=char.passive?'<div style="font-size:.68rem;color:#a78bfa;font-family:Chakra Petch,sans-serif;">✨ '+char.passive.name+'</div>':'';
-    const levelEl=document.getElementById('actionLevel');
-    if (levelEl){const v2=typeof CHARACTERS_V2!=='undefined'?CHARACTERS_V2[char.baseName||name]:null;levelEl.textContent=v2?'Nv '+v2.level+' · '+v2.xp+'/'+(typeof XPSystem!=='undefined'?XPSystem.xpNeeded(v2.level):'?')+' XP':'';}
-
-    const statusEl=document.getElementById('actionStatusEffects');
-    if (statusEl) {
-        const pills=(char.statusEffects||[]).filter(function(e){return e&&!e.passiveHidden;}).slice(0,4)
-            .map(function(e){const isBuff=e.type==='buff';const bg=isBuff?'rgba(16,185,129,0.2)':'rgba(239,68,68,0.15)';const col=isBuff?'#6ee7b7':'#fca5a5';const dur=e.permanent?'':(e.duration>0?' ('+e.duration+'T)':'');return '<span style="font-size:.6rem;padding:1px 5px;border-radius:3px;background:'+bg+';color:'+col+';">'+(e.emoji||'')+' '+(e.name||'')+dur+'</span>';}).join('');
-        statusEl.innerHTML=pills;
+    // Name + level
+    const nameEl = document.getElementById('moveModalName');
+    if (nameEl) {
+        nameEl.innerHTML = name + '<span style="font-size:.7rem;color:#ffd700;margin-left:8px;font-family:Chakra Petch,sans-serif;">Nv ' + charLevel + '</span>';
     }
 
-    const abilitiesEl=document.getElementById('actionAbilities');
-    if (abilitiesEl) {
-        abilitiesEl.innerHTML='';
-        (char.abilities||[]).forEach(function(ab,idx){
-            let cost=ab.cost||0;
-            if (char.rikudoMode) cost=Math.ceil(cost/2);
-            const canAfford=(char.charges||0)>=cost;
-            const typeClass=ab.type==='over'?'ability-btn-over':ab.type==='special'?'ability-btn-special':'ability-btn-basic';
-            const typeBadge=ab.type==='over'?'badge-over':ab.type==='special'?'badge-violet':'badge-blue';
-            const btn=document.createElement('button');
-            btn.className='ability-btn '+typeClass;
-            btn.disabled=!canAfford;
-            (function(i){btn.onclick=function(){selectAbility(name,i);};})(idx);
-            btn.innerHTML='<div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;"><div class="ability-btn-name">'+(ab.name||'')+'</div><span class="badge '+typeBadge+'" style="flex-shrink:0;font-size:.6rem;">'+(ab.type||'').toUpperCase()+'</span></div><div class="ability-btn-desc">'+(ab.description||'')+'</div></div><div class="ability-btn-cost">'+(cost>0?'💎 '+cost:'🆓')+'</div>';
-            abilitiesEl.appendChild(btn);
+    // Team badge
+    const teamEl = document.getElementById('moveModalTeam');
+    if (teamEl) {
+        const isTeam1 = char.team === 'team1';
+        teamEl.textContent = isTeam1 ? '🔷 HUNTERS' : '🔶 REAPERS';
+        teamEl.style.color = isTeam1 ? '#00d4ff' : '#ff6644';
+    }
+
+    // Stats
+    const hpBar = document.getElementById('moveModalHpBar');
+    const hpText = document.getElementById('moveModalHpText');
+    const velText = document.getElementById('moveModalVel');
+    const chgText = document.getElementById('moveModalCharges');
+    const hpPct = char.maxHp > 0 ? Math.max(0, (char.hp / char.maxHp) * 100) : 0;
+    if (hpBar) { hpBar.style.width = hpPct + '%'; hpBar.style.background = hpPct > 60 ? '#10b981' : hpPct > 30 ? '#f59e0b' : '#ef4444'; }
+    if (hpText) hpText.textContent = 'HP: ' + char.hp + ' / ' + char.maxHp;
+    if (velText) velText.textContent = 'Velocidad: ' + (char.speed || '?');
+    if (chgText) chgText.textContent = 'Cargas: ' + (char.charges || 0) + '/20';
+
+    // Shield
+    const shieldEl = document.getElementById('moveModalShield');
+    if (shieldEl) shieldEl.textContent = char.shield > 0 ? '🛡️ Escudo: ' + char.shield + ' HP' : '';
+
+    // Passive
+    const passiveEl = document.getElementById('moveModalPassive');
+    if (passiveEl && char.passive) {
+        passiveEl.style.display = 'block';
+        passiveEl.querySelector('.passive-name').textContent = '✨ PASIVA: ' + char.passive.name;
+        passiveEl.querySelector('.passive-desc').textContent = char.passive.description || '';
+    } else if (passiveEl) { passiveEl.style.display = 'none'; }
+
+    // Relics
+    const relicsEl = document.getElementById('moveModalRelics');
+    if (relicsEl) {
+        if (char.equippedRelics && char.equippedRelics.length > 0 && typeof RELICS_DATA !== 'undefined') {
+            const relicHTML = char.equippedRelics.map(function(r) {
+                const rd = RELICS_DATA[r];
+                if (!rd) return '';
+                const tierColor = {Raro:'#aaa',Especial:'#4fc3f7',Epico:'#c864ff',Legendario:'#ffd700'}[rd.tier] || '#aaa';
+                return '<div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid ' + tierColor + '33;border-radius:6px;padding:5px 8px;flex:1;">' +
+                    '<img src="' + rd.img + '" style="width:24px;height:24px;object-fit:contain;">' +
+                    '<span style="font-size:.6rem;color:' + tierColor + ';">' + r + '</span>' +
+                    '</div>';
+            }).join('');
+            relicsEl.style.display = 'block';
+            relicsEl.querySelector('.relics-list').innerHTML = relicHTML;
+        } else {
+            relicsEl.style.display = 'none';
+        }
+    }
+
+    // Moves grid (2 columns)
+    const movesEl = document.getElementById('moveModalMoves');
+    if (movesEl) {
+        movesEl.innerHTML = '';
+        (char.abilities || []).forEach(function(ab, idx) {
+            let cost = ab.cost || 0;
+            if (char.rikudoMode) cost = Math.ceil(cost / 2);
+            const canAfford = (char.charges || 0) >= cost;
+            const typeColors = { basic:'#00d4ff', special:'#a78bfa', over:'#f59e0b' };
+            const typeColor = typeColors[ab.type] || '#aaa';
+            const typeName = { basic:'BASIC', special:'SPECIAL', over:'OVER' }[ab.type] || ab.type.toUpperCase();
+
+            const card = document.createElement('div');
+            card.style.cssText = 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;cursor:' + (canAfford ? 'pointer' : 'not-allowed') + ';opacity:' + (canAfford ? '1' : '0.4') + ';transition:all .15s;';
+            if (canAfford) {
+                card.onmouseover = function() { this.style.borderColor = typeColor; this.style.background = 'rgba(255,255,255,0.08)'; };
+                card.onmouseout = function() { this.style.borderColor = 'rgba(255,255,255,0.1)'; this.style.background = 'rgba(255,255,255,0.04)'; };
+            }
+            card.innerHTML =
+                '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">' +
+                '<div style="font-family:Chakra Petch,sans-serif;font-size:.78rem;font-weight:700;color:#e8edf5;">' + (ab.name || '') + '</div>' +
+                '<span style="font-family:Chakra Petch,sans-serif;font-size:.55rem;font-weight:700;color:' + typeColor + ';border:1px solid ' + typeColor + '44;border-radius:4px;padding:1px 5px;">' + typeName + '</span>' +
+                '</div>' +
+                '<div style="font-size:.68rem;color:#8899bb;line-height:1.5;margin-bottom:8px;">' + (ab.description || '') + '</div>' +
+                '<div style="display:flex;align-items:center;gap:6px;">' +
+                '<div style="font-family:Chakra Petch,sans-serif;font-size:.65rem;color:' + (cost > 0 ? '#00d4ff' : '#10b981') + ';background:rgba(0,0,0,0.3);border-radius:4px;padding:2px 7px;">💎 ' + cost + ' cargas</div>' +
+                '</div>';
+
+            if (canAfford) {
+                (function(i) { card.onclick = function() { closeMoveModal(); selectAbility(name, i); }; })(idx);
+            }
+            movesEl.appendChild(card);
         });
     }
 
     modal.classList.add('show');
+}
+
+function closeMoveModal() {
+    const modal = document.getElementById('moveModal');
+    if (modal) modal.classList.remove('show');
+}
+
+// Legacy — redirect to showMoveModal
+function closeActionModal() {
+    closeMoveModal();
+    const old = document.getElementById('actionModal');
+    if (old) old.classList.remove('show');
 }
 
 function _animCard(charName,animClass,durationMs) {
@@ -459,5 +537,95 @@ function highlightActiveCharacter(){}
 function renderTurnOrder(){}
 function showBuffDebuffGuide(){}
 function showCharInfo(){}
+
+// ── CARD HOVER INFO PANEL ────────────────────────────────────
+
+function showCardInfo(name, char) {
+    const panel = document.getElementById('cardInfoContent');
+    if (!panel) return;
+
+    const portrait = getActivePortrait(name, char);
+    const hpPct = char.maxHp > 0 ? Math.max(0, (char.hp / char.maxHp) * 100) : 0;
+    const hpColor = hpPct > 60 ? '#10b981' : hpPct > 30 ? '#f59e0b' : '#ef4444';
+    const chgPct = Math.min(100, ((char.charges || 0) / 20) * 100);
+    const v2 = typeof CHARACTERS_V2 !== 'undefined' ? CHARACTERS_V2[char.baseName || name] : null;
+
+    let html = '';
+
+    // Portrait
+    if (portrait) {
+        html += '<img src="' + portrait + '" class="card-info-portrait" referrerpolicy="no-referrer">';
+    } else {
+        html += '<div style="width:100%;height:120px;background:linear-gradient(180deg,#0d1428,#030508);display:flex;align-items:center;justify-content:center;font-size:3rem;">⚔️</div>';
+    }
+
+    html += '<div style="padding:10px 12px;">';
+
+    // Name
+    html += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:#fff;letter-spacing:.06em;line-height:1;margin-bottom:6px;">' + name + '</div>';
+
+    // Stats
+    html += '<div class="ci-stat-row"><span class="ci-stat-label">HP</span><span class="ci-stat-val">' + char.hp + '/' + char.maxHp + (char.shield > 0 ? ' 🛡️' + char.shield : '') + '</span></div>';
+    html += '<div class="ci-bar-wrap"><div class="ci-bar-fill" style="width:' + hpPct + '%;background:' + hpColor + ';"></div></div>';
+    html += '<div class="ci-stat-row"><span class="ci-stat-label">Velocidad</span><span class="ci-stat-val">⚡ ' + (char.speed || '?') + '</span></div>';
+    html += '<div class="ci-stat-row"><span class="ci-stat-label">Cargas</span><span class="ci-stat-val">💎 ' + (char.charges || 0) + '/20</span></div>';
+    html += '<div class="ci-bar-wrap"><div class="ci-bar-fill" style="width:' + chgPct + '%;background:#f59e0b;"></div></div>';
+    if (v2) {
+        const xpNeeded = typeof XPSystem !== 'undefined' ? XPSystem.xpNeeded(v2.level) : 100;
+        const xpPct = Math.min(100, (v2.xp / xpNeeded) * 100);
+        html += '<div class="ci-stat-row"><span class="ci-stat-label">Nivel</span><span class="ci-stat-val" style="color:#ffd700;">Nv ' + v2.level + '</span></div>';
+        html += '<div class="ci-bar-wrap"><div class="ci-bar-fill" style="width:' + xpPct + '%;background:#4fc3f7;"></div></div>';
+    }
+
+    // Status effects
+    const activeEffects = (char.statusEffects || []).filter(function(e) { return e && !e.passiveHidden; });
+    if (activeEffects.length > 0) {
+        html += '<div class="ci-section">Efectos Activos</div>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px;">';
+        activeEffects.forEach(function(e) {
+            const isBuff = e.type === 'buff';
+            const bg = isBuff ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.15)';
+            const col = isBuff ? '#6ee7b7' : '#fca5a5';
+            const dur = e.permanent ? '' : (e.duration > 0 ? ' ' + e.duration + 'T' : '');
+            html += '<span style="font-size:.55rem;padding:1px 5px;border-radius:3px;background:' + bg + ';color:' + col + ';white-space:nowrap;">' + (e.emoji || '') + ' ' + (e.name || '') + dur + '</span>';
+        });
+        html += '</div>';
+    }
+
+    // Passive
+    if (char.passive) {
+        html += '<div class="ci-section">Pasiva</div>';
+        html += '<div style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.18);border-radius:6px;padding:6px 8px;margin-bottom:4px;">';
+        html += '<div style="font-family:Chakra Petch,sans-serif;font-size:.62rem;font-weight:700;color:#a78bfa;margin-bottom:3px;">✨ ' + char.passive.name + '</div>';
+        html += '<div style="font-size:.6rem;color:#8899bb;line-height:1.45;">' + (char.passive.description || '') + '</div>';
+        html += '</div>';
+    }
+
+    // Moves
+    if (char.abilities && char.abilities.length > 0) {
+        html += '<div class="ci-section">Movimientos</div>';
+        char.abilities.forEach(function(ab) {
+            const typeColors = { basic:'#00d4ff', special:'#a78bfa', over:'#f59e0b' };
+            const typeColor = typeColors[ab.type] || '#aaa';
+            html += '<div class="ci-move-row">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+            html += '<div class="ci-move-name">' + (ab.name || '') + '</div>';
+            html += '<span style="font-size:.5rem;color:' + typeColor + ';border:1px solid ' + typeColor + '44;border-radius:3px;padding:1px 4px;font-family:Chakra Petch,sans-serif;">' + (ab.type || '').toUpperCase() + '</span>';
+            html += '</div>';
+            html += '<div class="ci-move-desc">' + (ab.description || '') + '</div>';
+            html += '<div class="ci-move-meta">💎 ' + (ab.cost || 0) + ' cargas</div>';
+            html += '</div>';
+        });
+    }
+
+    html += '</div>';
+    panel.innerHTML = html;
+}
+
+function hideCardInfo() {
+    const panel = document.getElementById('cardInfoContent');
+    if (!panel) return;
+    panel.innerHTML = '<div style="padding:20px;text-align:center;color:#223;font-family:Chakra Petch,sans-serif;font-size:.7rem;letter-spacing:.1em;">Pasa el cursor sobre<br>una carta para ver<br>su información</div>';
+}
 
 console.log('[UNIVERSUS] init-render.js v3.0 — cartas clickeables ✓');

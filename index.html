@@ -252,6 +252,40 @@
       0%,100%{opacity:1}50%{opacity:.55}
     }
 
+    /* Card info panel — left side */
+    .card-info-panel {
+      width:240px;flex-shrink:0;
+      display:flex;flex-direction:column;
+      background:rgba(7,11,26,.97);
+      border-right:1px solid rgba(0,212,255,.08);
+      overflow:hidden;
+    }
+    .card-info-content {
+      flex:1;overflow-y:auto;
+    }
+    .card-info-portrait {
+      width:100%;aspect-ratio:3/4;object-fit:cover;object-position:top;
+      display:block;border-radius:0;
+    }
+    .ci-stat-row {
+      display:flex;justify-content:space-between;
+      font-family:'Chakra Petch',sans-serif;font-size:.65rem;
+      padding:2px 0;
+    }
+    .ci-stat-label { color:#445577; }
+    .ci-stat-val { color:#e8edf5;font-weight:600; }
+    .ci-bar-wrap { height:4px;background:rgba(0,0,0,.4);border-radius:2px;overflow:hidden;margin:3px 0 6px; }
+    .ci-bar-fill { height:100%;border-radius:2px;transition:width .3s; }
+    .ci-section { font-family:'Chakra Petch',sans-serif;font-size:.58rem;color:#00d4ff;letter-spacing:.12em;text-transform:uppercase;margin:8px 0 4px;border-top:1px solid rgba(255,255,255,.05);padding-top:6px; }
+    .ci-move-row { padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04); }
+    .ci-move-name { font-family:'Chakra Petch',sans-serif;font-size:.65rem;font-weight:700;color:#e8edf5;margin-bottom:2px; }
+    .ci-move-desc { font-size:.6rem;color:#8899bb;line-height:1.4; }
+    .ci-move-meta { font-family:'Chakra Petch',sans-serif;font-size:.58rem;color:#445577;margin-top:2px; }
+
+    /* Move modal show state */
+    #moveModal.show { display:flex !important; }
+    
+
     /* Modals */
     .action-modal.show { display:flex; }
     .target-selection-modal.show { display:flex; }
@@ -290,7 +324,17 @@
 <!-- ═══ BATALLA ═══ -->
 <div class="battle-screen" id="battleScreen">
 
-  <!-- Campo izquierdo + centro -->
+  <!-- Panel izquierdo — info de carta al hover -->
+  <div class="card-info-panel" id="cardInfoPanel">
+    <div class="log-panel-header">🃏 Info de Carta</div>
+    <div class="card-info-content" id="cardInfoContent">
+      <div style="padding:20px;text-align:center;color:#334;font-family:'Chakra Petch',sans-serif;font-size:.7rem;letter-spacing:.1em;">
+        Pasa el cursor sobre<br>una carta para ver<br>su información
+      </div>
+    </div>
+  </div>
+
+  <!-- Campo central -->
   <div class="battle-field">
 
     <!-- Header -->
@@ -316,10 +360,8 @@
       <div class="divider-line"></div>
     </div>
 
-    <!-- Summons zona enemiga -->
+    <!-- Summons -->
     <div class="zone-summons" id="team2Summons" style="justify-content:flex-start;padding:4px 16px;"></div>
-
-    <!-- Summons zona aliada -->
     <div class="zone-summons" id="team1Summons" style="justify-content:flex-start;padding:4px 16px;"></div>
 
     <!-- ZONA JUGADOR (abajo) -->
@@ -352,33 +394,55 @@
   </div>
 </div>
 
-<!-- ═══ MODAL ACCIÓN ═══ -->
-<div class="action-modal" id="actionModal">
-  <div class="action-modal-content">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <div id="roundCounter" style="font-family:'Chakra Petch',sans-serif;font-size:.7rem;color:#445577;letter-spacing:.15em;">RONDA 1</div>
-      <button onclick="closeActionModal()" class="btn btn-ghost btn-sm">✕ Cerrar</button>
+<!-- ═══ MOVE MODAL (selección de movimiento) ═══ -->
+<div id="moveModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem;">
+<div style="background:#0d1428;border:1px solid rgba(0,212,255,0.25);border-radius:16px;max-width:700px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 0 60px rgba(0,212,255,0.1);">
+
+  <!-- Hero section -->
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.06);">
+    <div style="position:relative;flex-shrink:0;">
+      <img id="moveModalPortrait" src="" alt="" style="width:80px;height:100px;object-fit:cover;object-position:top;border-radius:10px;border:2px solid rgba(0,212,255,0.3);display:none;">
+      <div id="moveModalPortraitFb" style="width:80px;height:100px;border-radius:10px;background:#111c35;display:flex;align-items:center;justify-content:center;font-size:2rem;border:2px solid rgba(0,212,255,0.2);">⚔️</div>
     </div>
-    <div class="action-modal-hero">
-      <div class="action-modal-portrait-wrap">
-        <img id="actionPortraitImg" class="action-modal-portrait" src="" alt="" onerror="this.style.display='none';document.getElementById('actionPortraitFallback').style.display='flex'">
-        <div id="actionPortraitFallback" class="action-modal-portrait-fallback" style="display:none;">⚔️</div>
+    <div style="flex:1;">
+      <div id="moveModalName" style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#fff;letter-spacing:.06em;line-height:1;margin-bottom:4px;"></div>
+      <div id="moveModalTeam" style="font-family:'Chakra Petch',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;margin-bottom:8px;"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+        <span style="font-family:'Chakra Petch',sans-serif;font-size:.7rem;color:#10b981;"><span id="moveModalVel"></span></span>
+        <span style="font-family:'Chakra Petch',sans-serif;font-size:.7rem;color:#f87171;"><span id="moveModalHpText"></span></span>
+        <span style="font-family:'Chakra Petch',sans-serif;font-size:.7rem;color:#f59e0b;"><span id="moveModalCharges"></span></span>
+        <span style="font-family:'Chakra Petch',sans-serif;font-size:.7rem;color:#60a5fa;" id="moveModalShield"></span>
       </div>
-      <div style="flex:1;">
-        <div id="actionModalTitle" class="action-modal-title">Personaje</div>
-        <div class="action-modal-stats">
-          <div class="action-stat">❤️ <span id="actionHP">—</span></div>
-          <div class="action-stat">⚡ <span id="actionCharges">0</span></div>
-          <div class="action-stat" id="actionShield" style="display:none;">🛡️ <span id="actionShieldValue">0</span></div>
-        </div>
-        <div id="actionPassive" style="margin-top:4px;"></div>
-        <div id="actionStatusEffects" style="margin-top:4px;"></div>
-        <div id="actionLevel" style="margin-top:4px;font-family:'Chakra Petch',sans-serif;font-size:.65rem;color:#445577;"></div>
+      <div style="height:5px;background:rgba(0,0,0,0.4);border-radius:3px;overflow:hidden;width:180px;margin-bottom:8px;">
+        <div id="moveModalHpBar" style="height:100%;border-radius:3px;transition:width .3s;"></div>
+      </div>
+      <!-- Passive -->
+      <div id="moveModalPassive" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);border-radius:8px;padding:8px 10px;">
+        <div class="passive-name" style="font-family:'Chakra Petch',sans-serif;font-size:.68rem;font-weight:700;color:#a78bfa;margin-bottom:3px;"></div>
+        <div class="passive-desc" style="font-size:.68rem;color:#8899bb;line-height:1.5;"></div>
       </div>
     </div>
-    <div id="actionAbilities" class="action-abilities"></div>
+    <!-- Close button -->
+    <button onclick="closeMoveModal()" style="align-self:flex-start;background:rgba(255,51,102,0.1);border:1px solid rgba(255,51,102,0.3);border-radius:8px;color:#ff3366;padding:6px 12px;cursor:pointer;font-family:'Chakra Petch',sans-serif;font-size:.72rem;font-weight:700;flex-shrink:0;">✕</button>
   </div>
+
+  <!-- Relics section -->
+  <div id="moveModalRelics" style="padding:10px 18px 0;display:none;">
+    <div style="font-family:'Chakra Petch',sans-serif;font-size:.62rem;color:#445577;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;">🎯 Reliquias equipadas</div>
+    <div class="relics-list" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+  </div>
+
+  <!-- Moves grid 2x2 -->
+  <div style="padding:14px 18px;">
+    <div style="font-family:'Chakra Petch',sans-serif;font-size:.62rem;color:#445577;letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px;">✖ MOVIMIENTOS</div>
+    <div id="moveModalMoves" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+  </div>
+
 </div>
+</div>
+
+<!-- ═══ MODAL ACCIÓN (legacy — redirige a moveModal) ═══ -->
+<div class="action-modal" id="actionModal" style="display:none !important;"></div>
 
 <!-- MODAL OBJETIVO -->
 <div class="target-selection-modal" id="targetModal">
@@ -562,15 +626,15 @@ window.confirmEquipPassive=function(name,pid,slot){XPSystem.equipPassive(name,pi
 window.skipLearnMove=function(){document.getElementById('learnMoveModal').classList.remove('show');};
 </script>
 
-<script src="js/skill-engine.js?v=20260705"></script>
-<script src="js/characters-v2.js?v=20260705"></script>
-<script src="js/init-render.js?v=20260705"></script>
-<script src="js/skills.js?v=20260705"></script>
-<script src="js/status-effects.js?v=20260705"></script>
-<script src="js/debuffs.js?v=20260705"></script>
-<script src="js/summons.js?v=20260705"></script>
-<script src="js/ability-select.js?v=20260705"></script>
-<script src="js/turn-logic.js?v=20260705"></script>
+<script src="js/skill-engine.js?v=20260706"></script>
+<script src="js/characters-v2.js?v=20260706"></script>
+<script src="js/init-render.js?v=20260706"></script>
+<script src="js/skills.js?v=20260706"></script>
+<script src="js/status-effects.js?v=20260706"></script>
+<script src="js/debuffs.js?v=20260706"></script>
+<script src="js/summons.js?v=20260706"></script>
+<script src="js/ability-select.js?v=20260706"></script>
+<script src="js/turn-logic.js?v=20260706"></script>
 
 </body>
 </html>
