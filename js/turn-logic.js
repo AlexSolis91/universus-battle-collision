@@ -244,7 +244,7 @@
                     'background:linear-gradient(135deg,#003a5c,#006688)',
                     'border:none',
                     'color:#00d4ff',
-                    "font-family:'Chakra Petch',sans-serif",
+                    "font-family:Chakra Petch,sans-serif",
                     'font-size:1.1em',
                     'font-weight:700',
                     'padding:16px 32px',
@@ -510,7 +510,7 @@
             btn.id = 'floatingContinueBtn';
             btn.style.cssText = ['position:fixed','bottom:28px','right:28px',
                 'background:linear-gradient(135deg,#003a5c,#006688)',
-                'border:none','color:#00d4ff',"font-family:'Chakra Petch',sans-serif",
+                'border:none','color:#00d4ff',"font-family:Chakra Petch,sans-serif",
                 'font-size:1.1em','font-weight:700','padding:16px 32px','border-radius:50px',
                 'cursor:pointer','z-index:996','box-shadow:0 0 28px rgba(0,217,255,0.55)',
                 'transition:all 0.2s ease','letter-spacing:0.05em'].join(';');
@@ -927,7 +927,7 @@
             meta.style.flex = '1';
             const nameEl = document.createElement('div');
             nameEl.textContent = name;
-            nameEl.style.cssText = 'font-family:'Chakra Petch',sans-serif;font-size:1.1em;font-weight:700;color:' + teamColor + ';margin-bottom:6px;';
+            nameEl.style.cssText = 'font-family:Chakra Petch,sans-serif;font-size:1.1em;font-weight:700;color:' + teamColor + ';margin-bottom:6px;';
             meta.appendChild(nameEl);
 
             const teamTag = document.createElement('div');
@@ -1034,7 +1034,7 @@
             // Botón cerrar
             const closeBtn = document.createElement('button');
             closeBtn.textContent = '✕ Cerrar';
-            closeBtn.style.cssText = 'width:100%;margin-top:8px;padding:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:rgba(255,255,255,0.7);font-family:'Chakra Petch',sans-serif;font-size:0.8em;cursor:pointer;';
+            closeBtn.style.cssText = 'width:100%;margin-top:8px;padding:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:rgba(255,255,255,0.7);font-family:Chakra Petch,sans-serif;font-size:0.8em;cursor:pointer;';
             closeBtn.onclick = closeCharInfo;
             content.appendChild(closeBtn);
 
