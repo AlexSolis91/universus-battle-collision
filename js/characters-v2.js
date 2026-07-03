@@ -38,7 +38,7 @@ const CHARACTERS_V2 = {
   //                  C) Ultra Instinto (esquiva/contraataque)
   // ════════════════════════════════════════════════════════
   'Goku': {
-    portrait: '',           // ← URL de imagen aquí
+    portrait: 'https://i.ibb.co/mVq2Cw1q/Super-Saiyan-Transformation-Art-Dragon-Ball-Power-Up-Golden-Aura-Energy.jpg',           // ← URL de imagen aquí
     transformPortrait: '',  // ← URL imagen transformado
     hp: 22,
     maxHp: 22,
@@ -161,7 +161,7 @@ const CHARACTERS_V2 = {
   //                  C) Señor del Invierno (congelación/CC)
   // ════════════════════════════════════════════════════════
   'Lich King': {
-    portrait: '',
+    portrait: 'https://i.ibb.co/q365QSyQ/PS.jpg',
     transformPortrait: '',
     hp: 26,
     maxHp: 26,
@@ -283,7 +283,7 @@ const CHARACTERS_V2 = {
   //                  C) Héroe de Clase S (soporte / intimidación)
   // ════════════════════════════════════════════════════════
   'Saitama': {
-    portrait: '',
+    portrait: 'https://i.ibb.co/NkxtbZf/descarga-21.jpg',
     transformPortrait: '',
     hp: 20,
     maxHp: 20,
@@ -405,7 +405,7 @@ const CHARACTERS_V2 = {
   //                  C) Determinación (soporte/sacrificio)
   // ════════════════════════════════════════════════════════
   'Rengoku': {
-    portrait: '',
+    portrait: 'https://i.ibb.co/JWRnGrfZ/Kyojuro-Rengoku.jpg',
     transformPortrait: '',
     hp: 21,
     maxHp: 21,
@@ -527,7 +527,7 @@ const CHARACTERS_V2 = {
   //                  C) Respiración Mecánica (tanque/regeneración)
   // ════════════════════════════════════════════════════════
   'Darth Vader': {
-    portrait: '',
+    portrait: 'https://i.ibb.co/WNRCT761/Sith-en-su-Hogar.jpg',
     transformPortrait: '',
     hp: 25,
     maxHp: 25,
@@ -649,7 +649,7 @@ const CHARACTERS_V2 = {
   //                  C) Velocidad Kryptoniana (multi-hit/esquiva)
   // ════════════════════════════════════════════════════════
   'Superman': {
-    portrait: '',
+    portrait: 'https://i.ibb.co/fY9JmMXj/Super-Man-AI.jpg',
     transformPortrait: '',
     hp: 30,
     maxHp: 30,
@@ -771,7 +771,7 @@ const CHARACTERS_V2 = {
   //                  C) Modo Rikudō (poder absoluto/transformación)
   // ════════════════════════════════════════════════════════
   'Madara Uchiha': {
-    portrait: '',
+    portrait: 'https://i.ibb.co/7N22qndc/Madara-Uchiha-Susano.jpg',
     transformPortrait: '',
     hp: 24,
     maxHp: 24,
@@ -898,7 +898,7 @@ const CHARACTERS_V2 = {
   //                  C) Conquistador (robo/debilitamiento)
   // ════════════════════════════════════════════════════════
   'Ragnar Lothbrok': {
-    portrait: '',
+    portrait: 'https://i.ibb.co/TDCS5pvx/Ragnar-from-Vikingard.jpg',
     transformPortrait: '',
     hp: 23,
     maxHp: 23,
@@ -1020,7 +1020,7 @@ const CHARACTERS_V2 = {
   //                  C) Istari (invocación/escudo global)
   // ════════════════════════════════════════════════════════
   'Gandalf': {
-    portrait: '',
+    portrait: 'https://i.ibb.co/sdR6W2np/Gandalf.jpg',
     transformPortrait: '',
     hp: 20,
     maxHp: 20,
@@ -1142,7 +1142,7 @@ const CHARACTERS_V2 = {
   //                  C) Control Demoniaco (CC/posesión/ejercito)
   // ════════════════════════════════════════════════════════
   'Muzan Kibutsuji': {
-    portrait: '',
+    portrait: 'https://i.ibb.co/r2YNRvhj/Muz-n-k-b-t-ji-AI-art.jpg',
     transformPortrait: '',
     hp: 22,
     maxHp: 22,
