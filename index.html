@@ -282,7 +282,8 @@
     .ci-move-desc { font-size:.6rem;color:#8899bb;line-height:1.4; }
     .ci-move-meta { font-family:'Chakra Petch',sans-serif;font-size:.58rem;color:#445577;margin-top:2px; }
 
-    /* Move modal show state */
+    /* Move modal show/hide */
+    #moveModal { display:none; }
     #moveModal.show { display:flex !important; }
     
 
@@ -395,7 +396,7 @@
 </div>
 
 <!-- ═══ MOVE MODAL (selección de movimiento) ═══ -->
-<div id="moveModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem;">
+<div id="moveModal" style="position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem;">
 <div style="background:#0d1428;border:1px solid rgba(0,212,255,0.25);border-radius:16px;max-width:700px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 0 60px rgba(0,212,255,0.1);">
 
   <!-- Hero section -->
@@ -626,15 +627,15 @@ window.confirmEquipPassive=function(name,pid,slot){XPSystem.equipPassive(name,pi
 window.skipLearnMove=function(){document.getElementById('learnMoveModal').classList.remove('show');};
 </script>
 
-<script src="js/skill-engine.js?v=20260706"></script>
-<script src="js/characters-v2.js?v=20260706"></script>
-<script src="js/init-render.js?v=20260706"></script>
-<script src="js/skills.js?v=20260706"></script>
-<script src="js/status-effects.js?v=20260706"></script>
-<script src="js/debuffs.js?v=20260706"></script>
-<script src="js/summons.js?v=20260706"></script>
-<script src="js/ability-select.js?v=20260706"></script>
-<script src="js/turn-logic.js?v=20260706"></script>
+<script src="js/skill-engine.js?v=20260707"></script>
+<script src="js/characters-v2.js?v=20260707"></script>
+<script src="js/init-render.js?v=20260707"></script>
+<script src="js/skills.js?v=20260707"></script>
+<script src="js/status-effects.js?v=20260707"></script>
+<script src="js/debuffs.js?v=20260707"></script>
+<script src="js/summons.js?v=20260707"></script>
+<script src="js/ability-select.js?v=20260707"></script>
+<script src="js/turn-logic.js?v=20260707"></script>
 
 </body>
 </html>
