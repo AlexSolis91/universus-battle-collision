@@ -241,10 +241,10 @@
                     'position:fixed',
                     'bottom:28px',
                     'right:28px',
-                    'background:linear-gradient(135deg,var(--primary-glow),var(--secondary-glow))',
+                    'background:linear-gradient(135deg,#003a5c,#006688)',
                     'border:none',
-                    'color:#0a0e17',
-                    "font-family:'Orbitron',sans-serif",
+                    'color:#00d4ff',
+                    "font-family:'Chakra Petch',sans-serif",
                     'font-size:1.1em',
                     'font-weight:700',
                     'padding:16px 32px',
@@ -294,7 +294,7 @@
             if (!w) {
                 w = document.createElement('div');
                 w.id = 'waitingOpponentTurn';
-                w.style.cssText = 'position:fixed;bottom:28px;right:28px;background:rgba(10,14,23,0.92);border:2px solid rgba(255,68,102,0.5);color:#ff4466;font-family:Orbitron,sans-serif;font-size:.85em;font-weight:700;padding:14px 26px;border-radius:50px;z-index:996;letter-spacing:.05em;box-shadow:0 0 20px rgba(255,68,102,0.3);pointer-events:none;';
+                w.style.cssText = 'position:fixed;bottom:28px;right:28px;background:rgba(10,14,23,0.92);border:2px solid rgba(255,68,102,0.5);color:#ff4466;font-family:'Chakra Petch',sans-serif;font-size:.85em;font-weight:700;padding:14px 26px;border-radius:50px;z-index:996;letter-spacing:.05em;box-shadow:0 0 20px rgba(255,68,102,0.3);pointer-events:none;';
                 if (!document.getElementById('waitPulseStyle')) {
                     const st = document.createElement('style');
                     st.id = 'waitPulseStyle';
@@ -509,8 +509,8 @@
             btn = document.createElement('button');
             btn.id = 'floatingContinueBtn';
             btn.style.cssText = ['position:fixed','bottom:28px','right:28px',
-                'background:linear-gradient(135deg,var(--primary-glow),var(--secondary-glow))',
-                'border:none','color:#0a0e17',"font-family:'Orbitron',sans-serif",
+                'background:linear-gradient(135deg,#003a5c,#006688)',
+                'border:none','color:#00d4ff',"font-family:'Chakra Petch',sans-serif",
                 'font-size:1.1em','font-weight:700','padding:16px 32px','border-radius:50px',
                 'cursor:pointer','z-index:996','box-shadow:0 0 28px rgba(0,217,255,0.55)',
                 'transition:all 0.2s ease','letter-spacing:0.05em'].join(';');
@@ -864,7 +864,7 @@
                         <span class="status-stat-badge" style="background: rgba(255, 170, 0, 0.2); border-color: var(--charge-bar);">
                             ⚡ Cargas: ${char.charges}
                         </span>
-                        ${char.shield > 0 ? `<span class="status-stat-badge" style="background: rgba(0, 217, 255, 0.2); border-color: var(--primary-glow);">🛡️ Escudo: ${char.shield}</span>` : ''}
+                        ${char.shield > 0 ? `<span class="status-stat-badge" style="background: rgba(0, 217, 255, 0.2); border-color: #00d4ff;">🛡️ Escudo: ${char.shield}</span>` : ''}
                         ${isDead ? '<span class="status-stat-badge" style="background: rgba(0, 0, 0, 0.5); border-color: #666;">💀 CAÍDO</span>' : ''}
                     </div>
                     <div class="stat-bar" style="margin-top: 10px;">
@@ -927,7 +927,7 @@
             meta.style.flex = '1';
             const nameEl = document.createElement('div');
             nameEl.textContent = name;
-            nameEl.style.cssText = 'font-family:Orbitron,sans-serif;font-size:1.1em;font-weight:700;color:' + teamColor + ';margin-bottom:6px;';
+            nameEl.style.cssText = 'font-family:'Chakra Petch',sans-serif;font-size:1.1em;font-weight:700;color:' + teamColor + ';margin-bottom:6px;';
             meta.appendChild(nameEl);
 
             const teamTag = document.createElement('div');
@@ -1034,7 +1034,7 @@
             // Botón cerrar
             const closeBtn = document.createElement('button');
             closeBtn.textContent = '✕ Cerrar';
-            closeBtn.style.cssText = 'width:100%;margin-top:8px;padding:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:rgba(255,255,255,0.7);font-family:Orbitron,sans-serif;font-size:0.8em;cursor:pointer;';
+            closeBtn.style.cssText = 'width:100%;margin-top:8px;padding:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:rgba(255,255,255,0.7);font-family:'Chakra Petch',sans-serif;font-size:0.8em;cursor:pointer;';
             closeBtn.onclick = closeCharInfo;
             content.appendChild(closeBtn);
 

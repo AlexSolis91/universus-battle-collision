@@ -23,59 +23,10 @@ function addLog(message, type) {
 
 // ── CONTINUE BUTTON (botón flotante — compatible con turn-logic.js) ──────────
 
+// showContinueButton — definida en turn-logic.js (se carga después)
+// Este stub es sobreescrito automáticamente
 function showContinueButton() {
-    let btn = document.getElementById('floatingContinueBtn');
-    if (!btn) {
-        btn = document.createElement('button');
-        btn.id = 'floatingContinueBtn';
-        btn.style.cssText = [
-            'position:fixed',
-            'bottom:28px',
-            'right:28px',
-            'background:linear-gradient(135deg,#003a5c,#00aa66)',
-            'border:2px solid #00d4ff',
-            'color:#00d4ff',
-            "font-family:'Chakra Petch',sans-serif",
-            'font-size:.95rem',
-            'font-weight:700',
-            'padding:14px 32px',
-            'border-radius:50px',
-            'cursor:pointer',
-            'z-index:996',
-            'box-shadow:0 0 28px rgba(0,212,255,0.4)',
-            'transition:all 0.2s ease',
-            'letter-spacing:.08em',
-            'text-transform:uppercase'
-        ].join(';');
-        btn.onmouseover = function() {
-            this.style.transform = 'scale(1.06)';
-            this.style.boxShadow = '0 0 44px rgba(0,212,255,0.7)';
-        };
-        btn.onmouseout = function() {
-            this.style.transform = 'scale(1)';
-            this.style.boxShadow = '0 0 28px rgba(0,212,255,0.4)';
-        };
-        btn.onclick = function() {
-            hideContinueButton();
-            continueTurn();
-        };
-        document.body.appendChild(btn);
-    }
-
-    const charName = gameState.selectedCharacter || '';
-    btn.innerHTML = '▶ Continuar Turno<br><span style="font-size:.65em;opacity:.75;font-weight:400;letter-spacing:.04em;">RONDA ' + (gameState.currentRound || 1) + ' · ' + charName + '</span>';
-
-    // Online: mostrar solo si es mi turno
-    if (typeof onlineMode !== 'undefined' && onlineMode) {
-        const myTeam = (typeof isRoomHost !== 'undefined' && isRoomHost) ? 'team1' : 'team2';
-        const currentChar = gameState.characters[charName];
-        const charTeam = currentChar ? currentChar.team : null;
-        if (charTeam !== myTeam) {
-            btn.style.display = 'none';
-            return;
-        }
-    }
-    btn.style.display = 'block';
+    console.log('[init-render] showContinueButton stub — turn-logic.js no ha cargado aún');
 }
 
 function hideContinueButton() {
@@ -86,11 +37,7 @@ function hideContinueButton() {
     if (w) w.style.display = 'none';
 }
 
-function continueTurn() {
-    // Esta función es definida por turn-logic.js
-    // Este stub solo existe como fallback de seguridad
-    console.warn('[UNIVERSUS] continueTurn llamado desde init-render — debería venir de turn-logic.js');
-}
+// continueTurn — definida en turn-logic.js
 
 function closeActionModal() {
     const modal = document.getElementById('actionModal');
