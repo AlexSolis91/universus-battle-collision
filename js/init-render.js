@@ -210,7 +210,7 @@ function renderCharacters() {
 
         // Name at bottom of image
         const nameEl=document.createElement('div');
-        nameEl.style.cssText='position:absolute;bottom:0;left:0;right:0;text-align:center;font-family:Bebas Neue,sans-serif;font-size:.85rem;letter-spacing:.08em;color:#fff;text-shadow:0 0 12px rgba(0,0,0,1),0 1px 4px rgba(0,0,0,1);z-index:5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:4px 6px 6px;background:linear-gradient(0deg,rgba(4,6,15,0.95) 60%,transparent 100%);';
+        nameEl.style.cssText='position:absolute;bottom:0;left:0;right:0;text-align:center;font-family:Bebas Neue,sans-serif;font-size:.85rem;letter-spacing:.08em;color:#00d4ff;text-shadow:0 0 10px rgba(0,212,255,0.9),0 0 20px rgba(0,212,255,0.5),0 1px 4px rgba(0,0,0,1);z-index:5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:4px 6px 6px;background:linear-gradient(0deg,rgba(4,6,15,0.95) 60%,transparent 100%);';
         nameEl.textContent='▶ ' + name + ' ◀';
         imgArea.appendChild(nameEl);
 
