@@ -6,7 +6,7 @@
   <title>UNIVERSUS — Battle Collision</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/universus.css">
+  <link rel="stylesheet" href="css/universus.css?v=20260704">
   <style>
     /* ── LAYOUT TIPO YUGIOH ─── */
     body { background:#04060f; color:#e8edf5; margin:0; overflow:hidden; height:100vh; }
@@ -295,6 +295,33 @@
     /* Move modal show/hide */
     #moveModal { display:none; }
     #moveModal.show { display:flex !important; }
+
+    /* Target selection portrait — fixed size */
+    .target-btn-portrait {
+      width: 80px !important;
+      height: 100px !important;
+      max-width: 80px !important;
+      max-height: 100px !important;
+      object-fit: cover !important;
+      object-position: top center !important;
+      border-radius: 8px !important;
+      display: block !important;
+      flex-shrink: 0 !important;
+    }
+    .target-btn-portrait-placeholder {
+      width: 80px !important;
+      height: 100px !important;
+      border-radius: 8px !important;
+      background: #111c35;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 1.8rem !important;
+    }
+    .target-btn {
+      max-width: 120px !important;
+      overflow: hidden !important;
+    }
     
 
     /* Modals */
