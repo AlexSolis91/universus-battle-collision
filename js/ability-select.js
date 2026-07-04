@@ -775,7 +775,7 @@ function triggerMaboroshi(targetTeam, debuffName) {
             }).join('');
 
             const imgSection = portrait
-                ? '<img src="' + portrait + '" alt="' + name + '" loading="eager" referrerpolicy="no-referrer" style="width:100%;height:140px;object-fit:cover;object-position:top center;display:block;" onerror="this.style.display='none'">'
+                ? '<img src="' + portrait + '" alt="' + name + '" loading="eager" referrerpolicy="no-referrer" style="width:100%;height:140px;object-fit:cover;object-position:top center;display:block;">'
                 : '<div style="width:100%;height:140px;background:#111c35;display:flex;align-items:center;justify-content:center;font-size:2.5rem;">⚔️</div>';
 
             return '<button class="target-btn" onclick="' + onclick + '" style="' + extraStyle + '">' +
