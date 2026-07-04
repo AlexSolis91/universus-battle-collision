@@ -199,10 +199,6 @@ function renderCharacters() {
         imgArea.appendChild(grad);
 
         // Level badge - top right
-        const lvlBadge=document.createElement('div');
-        lvlBadge.style.cssText='position:absolute;top:6px;right:7px;font-family:Chakra Petch,sans-serif;font-size:.85rem;font-weight:700;color:#ffd700;text-shadow:0 0 8px rgba(255,215,0,0.9),0 1px 3px rgba(0,0,0,1);z-index:5;line-height:1;';
-        lvlBadge.textContent=charLevel;
-        imgArea.appendChild(lvlBadge);
 
         // Active turn indicator - top left
         if (isActive&&!isDead) {
