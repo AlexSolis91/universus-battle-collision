@@ -725,5 +725,20 @@ window.skipLearnMove=function(){document.getElementById('learnMoveModal').classL
 })();
 </script>
 
+
+<script>
+// Deshabilitar showCharInfo y cualquier modal de ficha descriptiva
+window.showCharInfo = function() {};
+window.closeCharInfo = function() {
+    var p = document.getElementById('charInfoPanel');
+    if (p) p.style.display = 'none';
+};
+// Asegurarse de que charInfoPanel nunca sea visible
+document.addEventListener('DOMContentLoaded', function() {
+    var p = document.getElementById('charInfoPanel');
+    if (p) p.style.display = 'none';
+});
+</script>
+
 </body>
 </html>
