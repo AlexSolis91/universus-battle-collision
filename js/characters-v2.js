@@ -38,119 +38,154 @@ const CHARACTERS_V2 = {
   //                  C) Ultra Instinto (esquiva/contraataque)
   // ════════════════════════════════════════════════════════
   'Goku': {
-    portrait: 'https://i.ibb.co/mVq2Cw1q/Super-Saiyan-Transformation-Art-Dragon-Ball-Power-Up-Golden-Aura-Energy.jpg',           // ← URL de imagen aquí
-    transformPortrait: '',  // ← URL imagen transformado
-    hp: 22,
-    maxHp: 22,
-    speed: 95,
+    portrait: 'https://i.ibb.co/zVjZngc8/Goku-wallpaper.jpg',
+    transformPortrait: '',
+    hp: 25,
+    maxHp: 25,
+    speed: 96,
     level: 1,
     xp: 0,
-    movePool: ['goku_m1', 'goku_m2', 'goku_m3', 'goku_m4'], // 4 slots activos
-    passiveSlots: ['goku_p1'],                                  // hasta 3 pasivas equipadas
+
+    // Retratos por rango de nivel
+    portraitsByLevel: {
+      1:  'https://i.ibb.co/zVjZngc8/Goku-wallpaper.jpg',
+      16: 'https://i.ibb.co/F4W59Rsr/Whats-App-Image-2026-03-31-at-11-17-12-AM.jpg',
+      31: 'https://i.ibb.co/mVq2Cw1q/Super-Saiyan-Transformation-Art-Dragon-Ball-Power-Up-Golden-Aura-Energy.jpg',
+      46: 'https://i.ibb.co/tPFjc1L1/Captura-de-pantalla-2026-03-31-232531.png',
+      56: 'https://i.ibb.co/W4z7tk23/Legends-Limited-Goku-SS-God-DRAGON-BALL-LEGENDS.jpg',
+      71: 'https://i.ibb.co/bM3bbr3x/descarga-22.jpg',
+      86: 'https://i.ibb.co/393dxdtL/ultra-Instrite-atonmuse.jpg',
+    },
+
+    // Pool activo — 4 slots con restricciones de categoría:
+    // Slot 1: inicial o basico
+    // Slot 2: inicial, basico o especial
+    // Slot 3: especial
+    // Slot 4: ultimate
+    movePool: ['goku_m1', 'goku_m2', null, null],
+    passiveSlots: ['goku_p1', null, null],
 
     moves: [
-      // ── MOVIMIENTOS ───────────────────────────────────────
-      { id:'goku_m1', name:'Kamehameha', learnLevel:1,
-        type:'basic', target:'single', cost:0, chargeGain:2, damage:3,
-        description:'Dispara una ola de energía. 30% de probabilidad de crítico (daño x2).',
-        effects:[ {type:'damage', value:3}, {type:'crit', value:0.3} ] },
+      // ── INICIALES (disponibles desde nivel 1) ─────────────────
+      { id:'goku_m1', name:'Golpe de Ki', learnLevel:1,
+        type:'inicial', target:'single', cost:1, chargeGain:0, damage:2,
+        description:'2 de daño. El usuario y un aliado aleatorio generan 1 carga.',
+        effects:[ {type:'damage', value:2}, {type:'generate_charges', value:1}, {type:'charges_random_ally', value:1} ] },
 
-      { id:'goku_m2', name:'Golpe Kaioken', learnLevel:4,
-        type:'basic', target:'single', cost:0, chargeGain:2, damage:4,
-        description:'Ataque veloz potenciado. Genera 1 carga adicional si el objetivo tiene un debuff.',
-        effects:[ {type:'damage', value:4}, {type:'bonus_charge_if_debuff', value:1} ] },
+      { id:'goku_m2', name:'Taiyoken', learnLevel:1,
+        type:'inicial', target:'aoe', cost:3, chargeGain:0, damage:0,
+        description:'Sin daño. 50% de probabilidad de aplicar Ceguera 1T a cada enemigo golpeado. Por cada Ceguera aplicada, recupera 1 HP.',
+        effects:[ {type:'blind_chance_aoe', value:0.5, duration:1}, {type:'heal_per_debuff_applied', value:1} ] },
 
-      { id:'goku_m3', name:'Kaioken x3', learnLevel:8,
-        type:'special', target:'self', cost:3, chargeGain:0, damage:0,
-        description:'Multiplica el poder de Goku. Gana Furia 2 turnos y Regeneración 10% 2T.',
-        effects:[ {type:'buff', value:'Furia', duration:2}, {type:'regen', value:10, duration:2} ] },
+      // ── BÁSICOS ───────────────────────────────────────────────
+      { id:'goku_m3', name:'Blast de Energía', learnLevel:2,
+        type:'basico', target:'single', cost:2, chargeGain:0, damage:2,
+        description:'2 de daño. 50% de probabilidad de generar 2 cargas.',
+        effects:[ {type:'damage', value:2}, {type:'charge_chance', value:0.5, charges:2} ] },
 
-      { id:'goku_m4', name:'Kamehameha x10', learnLevel:12,
-        type:'special', target:'single', cost:5, chargeGain:0, damage:7,
-        description:'Versión masiva del Kamehameha. Causa 7 de daño. Aplica Quemadura 5% 2T.',
-        effects:[ {type:'damage', value:7}, {type:'burn_pct', value:5, duration:2} ] },
+      { id:'goku_m4', name:'Kamehameha', learnLevel:13,
+        type:'basico', target:'single', cost:1, chargeGain:0, damage:3,
+        description:'3 de daño. Si el objetivo tiene Provocación o Mega Provocación, el daño es triple.',
+        effects:[ {type:'damage', value:3}, {type:'triple_if_provoked'} ] },
 
-      { id:'goku_m5', name:'Teletransportación', learnLevel:16,
-        type:'special', target:'self', cost:4, chargeGain:1, damage:0,
-        description:'Desaparece del campo. Obtiene Sigilo 1T y Esquiva Área 1T.',
-        effects:[ {type:'buff', value:'Sigilo', duration:1}, {type:'buff', value:'Esquiva Area', duration:1} ] },
+      { id:'goku_m5', name:'Kiai', learnLevel:24,
+        type:'basico', target:'random_multi', cost:5, chargeGain:0, damage:1,
+        description:'Golpea de 1 a 5 enemigos aleatorios (puede repetir objetivo). 50% de probabilidad de daño triple en cada enemigo golpeado.',
+        effects:[ {type:'damage_multi_random', value:1, min_targets:1, max_targets:5}, {type:'triple_chance_per_hit', value:0.5} ] },
 
-      { id:'goku_m6', name:'Ráfaga de Cargas', learnLevel:20,
-        type:'special', target:'self', cost:0, chargeGain:5, damage:0,
-        description:'Concentra energía. Genera 5 cargas inmediatamente.',
-        effects:[ {type:'generate_charges', value:5} ] },
+      { id:'goku_m6', name:'Kamehameha x10', learnLevel:77,
+        type:'basico', target:'single', cost:0, chargeGain:0, damage:4,
+        description:'4 de daño. Si el objetivo tiene Provocación o Mega Provocación: genera 2 cargas adicionales y elimina todas sus cargas, transfiriéndolas a un aliado aleatorio.',
+        effects:[ {type:'damage', value:4}, {type:'bonus_vs_provoked_drain_transfer'} ] },
 
-      { id:'goku_m7', name:'Kaioken x20', learnLevel:25,
-        type:'special', target:'self', cost:6, chargeGain:0, damage:0,
-        description:'Transforma a Goku en SS. Sus ataques hacen +3 daño adicional por 3 turnos.',
-        effects:[ {type:'buff', value:'Furia', duration:3}, {type:'damage_boost', value:3, duration:3} ] },
+      // ── ESPECIALES ────────────────────────────────────────────
+      { id:'goku_m7', name:'Kienzan', learnLevel:29,
+        type:'especial', target:'single', cost:4, chargeGain:0, damage:3,
+        description:'3 de daño. Si el objetivo tiene un debuff activo, causa golpe crítico (daño doble).',
+        effects:[ {type:'damage', value:3}, {type:'crit_if_debuff'} ] },
 
-      { id:'goku_m8', name:'Genkidama', learnLevel:30,
-        type:'over', target:'aoe', cost:10, chargeGain:0, damage:6,
-        description:'Energía del universo. 6 de daño AOE. Roba 2 cargas a cada enemigo golpeado.',
-        effects:[ {type:'damage_aoe', value:6}, {type:'steal_charges_aoe', value:2} ] },
+      { id:'goku_m8', name:'Zanzoken', learnLevel:34,
+        type:'especial', target:'self', cost:5, chargeGain:0, damage:0,
+        description:'50% de aplicar Celeridad 10% 2T al usuario y aliados. 50% de aplicar Esquivar 2T al usuario y aliados. Todos los aliados generan 1 carga por cada Buff activo en ambos equipos.',
+        effects:[ {type:'celerity_chance_team', value:0.5, percent:10, duration:2}, {type:'dodge_chance_team', value:0.5, duration:2}, {type:'charges_per_buff_all', value:1} ] },
 
-      { id:'goku_m9', name:'Puño del Dragón', learnLevel:35,
-        type:'special', target:'single', cost:7, chargeGain:0, damage:9,
-        description:'9 de daño. Si el objetivo tiene más de 10 cargas, daño doble.',
-        effects:[ {type:'damage', value:9}, {type:'double_if_charges_above', value:10} ] },
+      { id:'goku_m9', name:'Golpe Señal', learnLevel:56,
+        type:'especial', target:'single', cost:5, chargeGain:0, damage:2,
+        description:'2 de daño. Elimina cargas del objetivo y disipa todos sus buffs. Por cada buff disipado, genera 3 cargas.',
+        effects:[ {type:'damage', value:2}, {type:'drain_all_charges'}, {type:'dispel_buffs'}, {type:'charges_per_buff_dispelled', value:3} ] },
 
-      { id:'goku_m10', name:'Ultra Instinto', learnLevel:45,
-        type:'over', target:'self', cost:12, chargeGain:0, damage:0,
-        description:'Transforma a Goku. Obtiene Esquiva Área, Contraataque y Furia por 3 turnos.',
-        effects:[ {type:'buff', value:'Esquiva Area', duration:3}, {type:'buff', value:'Contraataque', duration:3}, {type:'buff', value:'Furia', duration:3}, {type:'transform', value:'ultraInstinto'} ] },
+      { id:'goku_m10', name:'Fuerza Vital', learnLevel:66,
+        type:'especial', target:'aoe', cost:6, chargeGain:0, damage:3,
+        description:'3 de daño AOE. Recupera 2 HP por cada enemigo golpeado.',
+        effects:[ {type:'damage_aoe', value:3}, {type:'heal_per_target_hit', value:2} ] },
 
-      { id:'goku_m11', name:'Kamehameha Final', learnLevel:50,
-        type:'over', target:'single', cost:11, chargeGain:0, damage:12,
-        description:'12 de daño. 50% de crítico. Aplica Quemadura Solar 3T al objetivo.',
-        effects:[ {type:'damage', value:12}, {type:'crit', value:0.5}, {type:'solar_burn', value:5, duration:3} ] },
+      { id:'goku_m11', name:'Golpe de Ozaru', learnLevel:81,
+        type:'especial', target:'random_multi', cost:8, chargeGain:0, damage:4,
+        description:'Golpea a 4 enemigos aleatorios (puede repetir objetivo). Aplica Aturdimiento a cada objetivo golpeado. Si el objetivo ya tenía Aturdimiento, lo cambia a Mega Aturdimiento.',
+        effects:[ {type:'damage_multi_random', value:4, hits:4}, {type:'stun_or_mega_stun_per_hit', duration:1} ] },
 
-      { id:'goku_m12', name:'Instinto Superior: Ataque', learnLevel:55,
-        type:'special', target:'single', cost:8, chargeGain:0, damage:8,
-        description:'8 de daño. Si Goku tiene Esquiva Área activa: aplica Aturdimiento 1T al objetivo.',
-        effects:[ {type:'damage', value:8}, {type:'stun_if_self_aoe_immunity', duration:1} ] },
+      // ── ULTIMATES ─────────────────────────────────────────────
+      { id:'goku_m12', name:'Kaio Ken', learnLevel:7,
+        type:'ultimate', target:'single', cost:10, chargeGain:0, damage:0,
+        description:'El usuario sacrifica 5 HP y causa daño crítico sobre el objetivo. Si el usuario tiene menos del 50% HP, causa 10 de daño adicional.',
+        effects:[ {type:'self_damage', value:5}, {type:'crit_damage_to_target'}, {type:'bonus_if_hp_below', threshold:50, value:10} ] },
 
-      { id:'goku_m13', name:'Espíritu Compartido', learnLevel:60,
-        type:'special', target:'ally_aoe', cost:6, chargeGain:0, damage:0,
-        description:'Otorga a todos los aliados Regeneración 10% por 2 turnos y 3 cargas.',
-        effects:[ {type:'regen_team', value:10, duration:2}, {type:'generate_charges_team', value:3} ] },
+      { id:'goku_m13', name:'Mafuba', learnLevel:45,
+        type:'ultimate', target:'single', cost:10, chargeGain:0, damage:0,
+        description:'Elimina al objetivo. El objetivo revive al final de la tercera ronda después de usarse.',
+        effects:[ {type:'instant_kill'}, {type:'revive_target_after_rounds', rounds:3} ] },
 
-      { id:'goku_m14', name:'Genkidama Universal', learnLevel:70,
-        type:'over', target:'aoe', cost:14, chargeGain:0, damage:10,
-        description:'10 de daño AOE. Elimina todos los buffs enemigos antes del daño.',
-        effects:[ {type:'dispel_buffs_aoe'}, {type:'damage_aoe', value:10} ] },
+      { id:'goku_m14', name:'Genkidama', learnLevel:60,
+        type:'ultimate', target:'aoe', cost:13, chargeGain:0, damage:8,
+        description:'Disipa todos los buffs enemigos. Elimina todas las cargas de los aliados. Por cada carga eliminada, +1 daño base. Ignora Esquiva Área.',
+        effects:[ {type:'dispel_buffs_aoe'}, {type:'drain_all_charges_allies_bonus_damage'}, {type:'damage_aoe', value:8}, {type:'ignore_aoe_immunity'} ] },
 
-      { id:'goku_m15', name:'Ultra Instinto Dominado', learnLevel:80,
-        type:'over', target:'single', cost:15, chargeGain:0, damage:15,
-        description:'El poder definitivo. 15 de daño. 70% de crítico. Aplica Quemadura Solar permanente.',
-        effects:[ {type:'damage', value:15}, {type:'crit', value:0.7}, {type:'solar_burn', value:8, duration:999} ] },
+      { id:'goku_m15', name:'Hakai', learnLevel:90,
+        type:'ultimate', target:'single', cost:15, chargeGain:0, damage:0,
+        description:'Reduce el HP del objetivo a 0. Por cada punto de HP eliminado, genera 2 cargas en un aliado aleatorio.',
+        effects:[ {type:'reduce_hp_to_zero'}, {type:'charges_random_ally_per_hp_removed', value:2} ] },
 
-      { id:'goku_m16', name:'Omega Kamehameha', learnLevel:99,
-        type:'over', target:'aoe', cost:18, chargeGain:0, damage:14,
-        description:'El ataque final de Goku. 14 de daño AOE. Causa Quemadura Solar 3T a todos los enemigos. No puede esquivarse.',
-        effects:[ {type:'damage_aoe', value:14}, {type:'solar_burn_aoe', value:6, duration:3} ] },
+      { id:'goku_m16', name:'Golpe de Dragón', learnLevel:95,
+        type:'ultimate', target:'single', cost:15, chargeGain:0, damage:15,
+        description:'15 de daño base. +3 daño por cada HP perdido del usuario. Si elimina al objetivo, causa 5 daño por HP perdido repartido entre todos los enemigos.',
+        effects:[ {type:'damage', value:15}, {type:'bonus_per_hp_lost', value:3}, {type:'on_kill_aoe_per_hp_lost', value:5} ] },
     ],
 
     passives: [
-      { id:'goku_p1', name:'Espíritu Saiyajin', learnLevel:1,
-        description:'Al inicio de su turno, si Goku tiene menos del 30% de HP, genera 3 cargas adicionales.',
-        trigger:'on_turn_start',
-        effects:[ {type:'charges_if_hp_below', value:3, threshold:30} ] },
+      { id:'goku_p1', name:'Zenkai', learnLevel:1,
+        description:'Cada vez que el usuario recupera HP, genera 3 cargas.',
+        trigger:'on_heal',
+        effects:[ {type:'generate_charges', value:3} ] },
 
-      { id:'goku_p2', name:'Cuerpo de Acero', learnLevel:20,
-        description:'Goku recibe -1 de daño de todos los ataques (mínimo 1).',
+      { id:'goku_p2', name:'Fortaleza', learnLevel:16,
+        description:'30% de probabilidad de limpiar el debuff recibido.',
+        trigger:'on_debuff_received',
+        effects:[ {type:'cleanse_chance', value:0.3} ] },
+
+      { id:'goku_p3', name:'Transferencia de Ki', learnLevel:40,
+        description:'Cuando el usuario gasta cargas, 50% de probabilidad de que un aliado aleatorio genere la misma cantidad de cargas gastadas.',
+        trigger:'on_charges_spent',
+        effects:[ {type:'transfer_charges_chance', value:0.5} ] },
+
+      { id:'goku_p4', name:'Teletransportación', learnLevel:49,
+        description:'Cuando un enemigo gana 1 turno adicional, el usuario ejecuta su ULTIMATE sobre ese enemigo inmediatamente.',
+        trigger:'on_enemy_extra_turn',
+        effects:[ {type:'counter_with_ultimate'} ] },
+
+      { id:'goku_p5', name:'Kaioken x20', learnLevel:72,
+        description:'Cada vez que el usuario realiza un movimiento, pierde 3 HP pero causa daño doble.',
         trigger:'permanent',
-        effects:[ {type:'damage_reduction_flat', value:1} ] },
+        effects:[ {type:'self_damage_per_move', value:3}, {type:'double_damage'} ] },
 
-      { id:'goku_p3', name:'Instinto Salvaje', learnLevel:40,
-        description:'Cuando Goku recibe un golpe crítico, contraataca automáticamente con 3 de daño.',
-        trigger:'on_hit_received',
-        effects:[ {type:'counterattack_on_crit', value:3} ] },
+      { id:'goku_p6', name:'Maestría', learnLevel:86,
+        description:'50% de probabilidad de regenerar todas las cargas utilizadas por un movimiento.',
+        trigger:'on_move_used',
+        effects:[ {type:'refund_charges_chance', value:0.5} ] },
 
-      { id:'goku_p4', name:'Última Reserva', learnLevel:60,
-        description:'La primera vez que Goku llega a 0 HP en una batalla, sobrevive con 1 HP y regenera 5 cargas.',
+      { id:'goku_p7', name:'Ultra Instinto', learnLevel:100,
+        description:'80% de probabilidad de esquivar cualquier ataque. Al esquivar, contraataca con un ataque básico aleatorio.',
         trigger:'permanent',
-        effects:[ {type:'survive_once', value:1}, {type:'charges_on_survive', value:5} ] },
+        effects:[ {type:'dodge_chance', value:0.8}, {type:'counter_on_dodge_basic'} ] },
     ],
   },
 
@@ -1262,31 +1297,47 @@ const CHARACTERS_V2 = {
 // ── Convertir al formato que usa el juego ──────────────────────
 // Toma los movimientos del pool actual y los convierte a char.abilities
 function buildCharacterFromV2(name, charData, forTeam) {
-    const poolMoves = (charData.movePool || []).map(function(moveId) {
-        return (charData.moves || []).find(function(m) { return m.id === moveId; });
-    }).filter(Boolean);
+    // Resolver retrato según nivel actual
+    function getPortraitForLevel(cd, level) {
+        if (!cd.portraitsByLevel) return cd.portrait || '';
+        const thresholds = Object.keys(cd.portraitsByLevel).map(Number).sort((a,b)=>b-a);
+        for (const t of thresholds) {
+            if (level >= t) return cd.portraitsByLevel[t];
+        }
+        return cd.portrait || '';
+    }
 
+    const currentLevel = charData.level || 1;
+    const portrait = getPortraitForLevel(charData, currentLevel);
+
+    // Pasivas equipadas
     const equippedPassives = (charData.passiveSlots || []).map(function(pid) {
+        if (!pid) return null;
         return (charData.passives || []).find(function(p) { return p.id === pid; });
     }).filter(Boolean);
 
+    // Pool de movimientos — respetar slots vacíos (null)
+    const poolMoves = (charData.movePool || []).map(function(moveId) {
+        if (!moveId) return null;
+        return (charData.moves || []).find(function(m) { return m.id === moveId; });
+    });
+
     return {
         hp: charData.hp,
-        maxHp: charData.maxHp,
-        speed: charData.speed,
+        maxHp: charData.maxHp || charData.hp,
+        speed: charData.speed || 85,
         charges: 0,
         shield: 0,
         shieldEffect: null,
-        team: forTeam,
+        team: forTeam || 'team1',
         isDead: false,
         statusEffects: [],
-        portrait: charData.portrait || '',
-        transformPortrait: charData.transformPortrait || '',
+        portrait: portrait,
+        transformPortrait: charData.transformPortrait || null,
         baseName: name,
-        level: charData.level || 1,
+        level: currentLevel,
         xp: charData.xp || 0,
 
-        // Pasiva equipada (primera activa como pasiva principal)
         passive: equippedPassives[0] ? {
             name: equippedPassives[0].name,
             description: equippedPassives[0].description,
@@ -1295,23 +1346,24 @@ function buildCharacterFromV2(name, charData, forTeam) {
             _id: equippedPassives[0].id,
         } : null,
 
-        // Pool de movimientos activos → abilities
+        // 4 slots — null = vacío
         abilities: poolMoves.map(function(m) {
+            if (!m) return null;
             return {
                 name: m.name,
-                type: m.type,
-                cost: m.cost,
-                chargeGain: m.chargeGain,
-                description: m.description,
-                target: m.target,
-                damage: m.damage,
+                type: m.type, // inicial, basico, especial, ultimate
+                cost: m.cost || 0,
+                chargeGain: m.chargeGain || 0,
+                description: m.description || '',
+                target: m.target || 'single',
+                damage: m.damage || 0,
                 effects: m.effects || [],
-                effect: '_engine', // usa SkillEngine
+                effect: '_engine',
                 _moveId: m.id,
+                _slotType: m.type,
             };
-        }),
+        }).filter(Boolean), // remove nulls for battle rendering
 
-        // Datos completos para el sistema de progresión
         _v2data: charData,
     };
 }
