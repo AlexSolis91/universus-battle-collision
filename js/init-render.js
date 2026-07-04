@@ -306,7 +306,7 @@ function _updateCurrentTurnDisplay() {
     if (!name) { el.textContent='Calculando...'; el.style.color='#445577'; return; }
     const char=gameState.characters[name];
     const isAI=char&&char.team===gameState.aiTeam;
-    el.textContent=(isAI?'🤖 ':' ▶ ')+name;
+    el.textContent='▶ ' + name + ' ◀';
     el.style.color=isAI?'#ff6644':'#00d4ff';
 }
 
