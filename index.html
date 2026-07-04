@@ -669,7 +669,7 @@ window.skipLearnMove=function(){document.getElementById('learnMoveModal').classL
             movePool: ['goku_m1','goku_m2',null,null],
             passiveSlots: ['goku_p1',null,null],
             moves: [
-                {id:'goku_m1',name:'Golpe de Ki',learnLevel:1,type:'inicial',target:'single',cost:1,chargeGain:0,damage:2,description:'2 de daño. El usuario y un aliado aleatorio generan 1 carga.',effects:[{type:'damage',value:2},{type:'generate_charges',value:1},{type:'charges_random_ally',value:1}]},
+                {id:'goku_m1',name:'Golpe de Ki',learnLevel:1,type:'inicial',target:'single',cost:0,chargeGain:0,damage:2,description:'2 de daño. El usuario y un aliado aleatorio generan 1 carga.',effects:[{type:'damage',value:2},{type:'generate_charges',value:1},{type:'charges_random_ally',value:1}]},
                 {id:'goku_m2',name:'Taiyoken',learnLevel:1,type:'inicial',target:'aoe',cost:3,chargeGain:0,damage:0,description:'Sin daño. 50% Ceguera 1T por objetivo. Por cada Ceguera aplicada recupera 1 HP.',effects:[{type:'blind_chance_aoe',value:0.5,duration:1},{type:'heal_per_debuff_applied',value:1}]},
                 {id:'goku_m3',name:'Blast de Energía',learnLevel:2,type:'basico',target:'single',cost:2,chargeGain:0,damage:2,description:'2 daño. 50% de generar 2 cargas.',effects:[{type:'damage',value:2},{type:'charge_chance',value:0.5,charges:2}]},
                 {id:'goku_m4',name:'Kamehameha',learnLevel:13,type:'basico',target:'single',cost:1,chargeGain:0,damage:3,description:'3 daño. Si el objetivo tiene Provocación o Mega Provocación, daño triple.',effects:[{type:'damage',value:3},{type:'triple_if_provoked'}]},
