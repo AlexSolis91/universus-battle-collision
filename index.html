@@ -612,7 +612,74 @@ function executeAITurn(name){
   setTimeout(function(){
     const abs=c.abilities||[];let chosen=0;
     for(let i=abs.length-1;i>=0;i--){if((c.charges||0)>=(abs[i].cost||0)){chosen=i;break;}}
-    selectAbility(name,chosen);
+
+    // Seleccionar objetivo automaticamente para la IA
+    const ab = abs[chosen];
+    if (!ab) { endTurn(); return; }
+
+    const myTeam = c.team;
+    const enemyTeam = myTeam === 'team1' ? 'team2' : 'team1';
+
+    // Si el movimiento requiere objetivo enemigo ST
+    if (ab.target === 'single' || ab.target === 'random_multi') {
+      // Elegir enemigo con mas HP (o random)
+      const enemies = Object.keys(gameState.characters).filter(function(n){
+        const e = gameState.characters[n];
+        return e && e.team === enemyTeam && !e.isDead && e.hp > 0;
+      });
+      if (enemies.length === 0) { endTurn(); return; }
+      // Preferir objetivo con Provocacion, si no el de mas HP
+      const withProv = enemies.filter(function(n){
+        return (gameState.characters[n].statusEffects||[]).some(function(e){
+          return e && (normAccent(e.name||'')==='provocacion' || normAccent(e.name||'')==='mega provocacion');
+        });
+      });
+      const target = withProv.length > 0 ? withProv[0] :
+        enemies.reduce(function(best,n){ return gameState.characters[n].hp > gameState.characters[best].hp ? n : best; }, enemies[0]);
+      selectAbility(name, chosen);
+      // Esperar a que se abra el modal de objetivo y seleccionarlo
+      setTimeout(function(){
+        const modal = document.getElementById('targetModal');
+        if (modal && modal.classList.contains('show')) {
+          // Buscar el boton del objetivo correcto y clickearlo
+          const btns = modal.querySelectorAll('.target-btn');
+          for (let i=0; i<btns.length; i++) {
+            const btnName = btns[i].querySelector('.target-btn-info')?.textContent || '';
+            if (btnName.includes(target)) { btns[i].click(); return; }
+          }
+          // Si no encontramos por nombre, clickear el primero
+          if (btns[0]) btns[0].click();
+        }
+      }, 400);
+      return;
+    }
+
+    // Si es aliado ST
+    if (ab.target === 'ally_single') {
+      const allies = Object.keys(gameState.characters).filter(function(n){
+        const e = gameState.characters[n];
+        return e && e.team === myTeam && !e.isDead && e.hp > 0;
+      });
+      if (allies.length === 0) { endTurn(); return; }
+      // Preferir aliado con menos HP
+      const target = allies.reduce(function(best,n){ return gameState.characters[n].hp < gameState.characters[best].hp ? n : best; }, allies[0]);
+      selectAbility(name, chosen);
+      setTimeout(function(){
+        const modal = document.getElementById('targetModal');
+        if (modal && modal.classList.contains('show')) {
+          const btns = modal.querySelectorAll('.target-btn');
+          for (let i=0; i<btns.length; i++) {
+            const btnName = btns[i].querySelector('.target-btn-info')?.textContent || '';
+            if (btnName.includes(target)) { btns[i].click(); return; }
+          }
+          if (btns[0]) btns[0].click();
+        }
+      }, 400);
+      return;
+    }
+
+    // AOE, self, ally_aoe — ejecutar directamente
+    selectAbility(name, chosen);
   },900);
 }
 
