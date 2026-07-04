@@ -763,15 +763,27 @@ function triggerMaboroshi(targetTeam, debuffName) {
 
         // Helper: genera HTML de un botón de objetivo con portrait
         function makeTargetBtn(onclick, portrait, name, infoHTML, extraStyle = '') {
-            const imgHTML = portrait
-                ? `<img class="target-btn-portrait" src="${portrait}" alt="${name}" loading="eager" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="target-btn-portrait-placeholder" style="display:none">⚔️</div>`
-                : `<div class="target-btn-portrait-placeholder">⚔️</div>`;
-            return `
-                <button class="target-btn" onclick="${onclick}" style="${extraStyle}">
-                    ${imgHTML}
-                    <div class="target-btn-info">${infoHTML}</div>
-                </button>
-            `;
+            // Extract HP from infoHTML for display
+            const hpMatch = infoHTML.match(/HP:\s*([\d\/]+)/);
+            const hpText = hpMatch ? 'HP: ' + hpMatch[1] : '';
+            // Extract any status badges (⚠ etc)
+            const badgeMatch = infoHTML.match(/<small[^>]*>(.*?)<\/small>/g) || [];
+            const badges = badgeMatch.map(function(b) {
+                const text = b.replace(/<[^>]+>/g,'').trim();
+                if (!text || text.startsWith('HP:')) return '';
+                return '<div style="font-family:Chakra Petch,sans-serif;font-size:.55rem;color:#f59e0b;padding:0 8px 6px;">⚠ ' + text + '</div>';
+            }).join('');
+
+            const imgSection = portrait
+                ? '<img src="' + portrait + '" alt="' + name + '" loading="eager" referrerpolicy="no-referrer" style="width:100%;height:140px;object-fit:cover;object-position:top center;display:block;" onerror="this.style.display='none'">'
+                : '<div style="width:100%;height:140px;background:#111c35;display:flex;align-items:center;justify-content:center;font-size:2.5rem;">⚔️</div>';
+
+            return '<button class="target-btn" onclick="' + onclick + '" style="' + extraStyle + '">' +
+                imgSection +
+                '<div class="target-btn-name">' + name + '</div>' +
+                '<div class="target-btn-hp">' + hpText + '</div>' +
+                badges +
+                '</button>';
         }
 
         // Ejecutar habilidad sobre una invocación (usado para Kamish con Mega Provocación)

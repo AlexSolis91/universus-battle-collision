@@ -1187,73 +1187,77 @@ body::before {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.78);
   z-index: 1050;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  padding: 1rem;
-  backdrop-filter: blur(4px);
+  padding: 1.5rem;
+  backdrop-filter: blur(6px);
 }
 .target-selection-modal.show { display: flex; }
 .target-selection-content {
-  background: var(--bg-card);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-xl) var(--radius-xl) var(--radius-lg) var(--radius-lg);
-  padding: 1.2rem;
+  background: #0d1428;
+  border: 1px solid rgba(0,212,255,0.25);
+  border-radius: 18px;
+  padding: 1.5rem 1.8rem 1.8rem;
   width: 100%;
-  max-width: 520px;
-  box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+  max-width: 640px;
+  box-shadow: 0 0 60px rgba(0,0,0,0.6), 0 0 30px rgba(0,212,255,0.08);
 }
 .target-selection-title {
-  font-family: 'Chakra Petch', sans-serif;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--plasma-blue);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  color: #00d4ff;
+  letter-spacing: .1em;
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.2rem;
+  text-shadow: 0 0 20px rgba(0,212,255,0.4);
 }
 .target-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
 }
 .target-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 8px 4px;
-  border-radius: var(--radius-md);
+  gap: 0;
+  padding: 0;
+  border-radius: 12px;
   cursor: pointer;
-  transition: var(--transition);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s;
+  background: #080d1a;
+  border: 2px solid rgba(255,255,255,0.1);
+  overflow: hidden;
+  width: 140px;
 }
 .target-btn:hover {
-  border-color: var(--plasma-red);
-  background: rgba(255,51,102,0.08);
-  transform: translateY(-2px);
+  border-color: #00d4ff;
+  box-shadow: 0 0 0 2px #00d4ff, 0 0 20px rgba(0,212,255,0.4);
+  transform: translateY(-4px) scale(1.03);
 }
 .target-btn-img {
   width: 50px;
   height: 50px;
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   object-fit: cover;
 }
 .target-btn-name {
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #e8edf5;
   text-align: center;
   line-height: 1.2;
+  padding: 6px 8px 2px;
 }
 .target-btn-hp {
-  font-size: 0.58rem;
-  color: var(--plasma-green);
+  font-size: 0.6rem;
+  color: #10b981;
   font-family: 'Chakra Petch', sans-serif;
+  padding: 0 8px 6px;
 }
 
 /* ── GAME OVER MODAL ────────────────────────────────────── */
